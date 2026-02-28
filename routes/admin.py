@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 
 from deps import render
-from models import User, Challenge, Flag, Score, Submission
+from models import User, Challenge, Flag, Score, Submission, SiteConfig, get_site_config
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -60,7 +60,7 @@ def dashboard(request: Request):
     participants = db.query(User).filter(User.is_admin == False, User.is_evaluator == False).order_by(User.username).all()
     challenges = db.query(Challenge).order_by(Challenge.order_position).all()
     total_approved = db.query(Score).filter_by(is_approved=True).count()
-    pending_users = db.query(User).filter_by(is_approved=False, is_admin=False).order_by(User.created_at.desc()).all()
+    site_config = get_site_config(db)
 
     return render(
         "admin_dashboard.html",
@@ -71,9 +71,9 @@ def dashboard(request: Request):
         participants=participants,
         challenges=challenges,
         total_approved_scores=total_approved,
-        is_leaderboard_public=user.is_leaderboard_public,
-        event_active=user.event_active,
-        pending_users=pending_users,
+        is_leaderboard_public=site_config.leaderboard_public,
+        event_active=site_config.event_active,
+        active_round=site_config.active_round,
     )
 
 
@@ -138,8 +138,8 @@ def toggle_leaderboard(request: Request):
         return redirect
 
     db = request.state.db
-    user = request.state.user
-    user.is_leaderboard_public = not user.is_leaderboard_public
+    config = get_site_config(db)
+    config.leaderboard_public = not config.leaderboard_public
     db.commit()
     return RedirectResponse(url=request.url_for("admin.dashboard"), status_code=303)
 
@@ -211,9 +211,25 @@ def toggle_event(request: Request):
         return redirect
 
     db = request.state.db
-    user = request.state.user
-    user.event_active = not user.event_active
+    config = get_site_config(db)
+    config.event_active = not config.event_active
     db.commit()
+    return RedirectResponse(url=request.url_for("admin.dashboard"), status_code=303)
+
+
+# ── Round management ─────────────────────────────────────────────────────────
+
+@router.post("/set-active-round", name="admin.set_active_round")
+def set_active_round(request: Request, round_number: int = Form(...)):
+    redirect = _require_admin(request)
+    if redirect:
+        return redirect
+
+    db = request.state.db
+    config = get_site_config(db)
+    if round_number in (0, 1, 2, 3):
+        config.active_round = round_number
+        db.commit()
     return RedirectResponse(url=request.url_for("admin.dashboard"), status_code=303)
 
 
@@ -240,7 +256,7 @@ def reveal_all_challenges(request: Request):
         return redirect
 
     db = request.state.db
-    db.query(Challenge).update({Challenge.is_revealed: True})
+    db.query(Challenge).update({Challenge.is_revealed: True}, synchronize_session=False)
     db.commit()
     return RedirectResponse(url=request.url_for("admin.dashboard"), status_code=303)
 
@@ -252,7 +268,7 @@ def hide_all_challenges(request: Request):
         return redirect
 
     db = request.state.db
-    db.query(Challenge).update({Challenge.is_revealed: False})
+    db.query(Challenge).update({Challenge.is_revealed: False}, synchronize_session=False)
     db.commit()
     return RedirectResponse(url=request.url_for("admin.dashboard"), status_code=303)
 

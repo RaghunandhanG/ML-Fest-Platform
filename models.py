@@ -216,3 +216,27 @@ class Score(Base):
 
     def __repr__(self):
         return f"<Score user={self.user_id} flag={self.flag_id} pts={self.points} approved={self.is_approved}>"
+
+
+# ── Site Configuration (singleton row) ────────────────────────────────────────
+
+class SiteConfig(Base):
+    __tablename__ = "site_config"
+
+    id = Column(Integer, primary_key=True)
+    active_round = Column(Integer, default=0)       # 0=none, 1=Round1, 2=Round2, 3=Round3
+    event_active = Column(Boolean, default=False)
+    leaderboard_public = Column(Boolean, default=False)
+
+    def __repr__(self):
+        return f"<SiteConfig round={self.active_round} event={self.event_active}>"
+
+
+def get_site_config(db):
+    """Return the singleton SiteConfig row, creating it if absent."""
+    config = db.query(SiteConfig).first()
+    if config is None:
+        config = SiteConfig(active_round=0, event_active=False, leaderboard_public=False)
+        db.add(config)
+        db.commit()
+    return config

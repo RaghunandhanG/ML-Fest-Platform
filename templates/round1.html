@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Round 1 - Team Qernels CTF{% endblock %}
+
+{% block extra_css %}
+<style>
+.r1-hero {
+    text-align: center;
+    padding: 4rem 1.5rem;
+}
+.r1-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+.r1-title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+}
+.r1-subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 480px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+}
+.r1-badge {
+    display: inline-block;
+    background: var(--accent-light);
+    border: 2px solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 0.5rem 1.25rem;
+    font-weight: 800;
+    font-size: 0.9rem;
+    box-shadow: 3px 3px 0 var(--border-dark);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="r1-hero">
+    <div class="r1-icon">&#127942;</div>
+    <h1 class="r1-title">Round 1</h1>
+    <p class="r1-subtitle">
+        This round has concluded. Content and results will be made available here soon.
+        Stay tuned for updates!
+    </p>
+    <span class="r1-badge">Coming Soon</span>
+</div>
+{% endblock %}

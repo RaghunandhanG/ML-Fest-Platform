@@ -63,7 +63,7 @@ async def register(request: Request):
     if db.query(User).filter_by(email=email).first():
         return JSONResponse({"success": False, "message": "Email already registered"}, 409)
 
-    user = User(username=username, email=email)
+    user = User(username=username, email=email, is_approved=True)
     user.set_password(password)
     db.add(user)
     db.commit()
@@ -71,7 +71,7 @@ async def register(request: Request):
     return JSONResponse(
         {
             "success": True,
-            "message": "Registration successful! Your account is pending admin approval. You will be able to login once approved.",
+            "message": "Registration successful! You can now login.",
             "user": {"id": user.id, "username": user.username, "email": user.email},
         },
         201,
@@ -103,15 +103,11 @@ async def login(request: Request):
     if not user or not user.check_password(password):
         return JSONResponse({"success": False, "message": "Invalid username or password"}, 401)
 
-    if not user.is_approved and not user.is_admin:
-        return JSONResponse(
-            {"success": False, "message": "Your account is pending admin approval. Please wait for the admin to approve your registration."},
-            403,
-        )
-
     user.last_login = datetime.utcnow()
     db.commit()
 
+    # Clear any stale session data before setting the new user
+    request.session.clear()
     request.session["user_id"] = user.id
 
     return JSONResponse(
@@ -133,13 +129,13 @@ async def login(request: Request):
 
 @router.get("/logout", name="auth.logout")
 def logout_get(request: Request):
-    request.session.pop("user_id", None)
+    request.session.clear()
     return RedirectResponse(url="/", status_code=303)
 
 
 @router.post("/logout")
 def logout_post(request: Request):
-    request.session.pop("user_id", None)
+    request.session.clear()
     return JSONResponse({"success": True, "message": "Logout successful!"})
 
 

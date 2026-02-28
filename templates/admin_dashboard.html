@@ -61,14 +61,52 @@
 <h1>Admin Dashboard</h1>
 <p>Only admin users can view and operate this page.</p>
 
-<!-- Quick Reveal / Hide All -->
-<div style="display:flex; gap:0.5rem; margin:1rem 0 1.25rem; flex-wrap:wrap;">
-    <form method="POST" class="inline-form" action="{{ url_for('admin.reveal_all_challenges') }}">
-        <button type="submit" class="btn btn-success">&#128065; Reveal All Challenges</button>
-    </form>
-    <form method="POST" class="inline-form" action="{{ url_for('admin.hide_all_challenges') }}">
-        <button type="submit" class="btn btn-danger">&#128683; Hide All Challenges</button>
-    </form>
+<!-- Round Management -->
+<div class="section">
+    <h2>&#127942; Round Management</h2>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.75rem;">Only one round can be active at a time. Non-admin users see only the active round's tab.</p>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+        {% for r in [1,2,3] %}
+        <form method="POST" class="inline-form" action="{{ url_for('admin.set_active_round') }}">
+            <input type="hidden" name="round_number" value="{{ r }}">
+            {% if active_round == r %}
+                <button type="submit" class="btn btn-success" style="pointer-events:none; opacity:0.85;">
+                    &#9679; Round {{ r }} (Active)
+                </button>
+            {% else %}
+                <button type="submit" class="btn btn-secondary">
+                    Activate Round {{ r }}
+                </button>
+            {% endif %}
+        </form>
+        {% endfor %}
+        <form method="POST" class="inline-form" action="{{ url_for('admin.set_active_round') }}">
+            <input type="hidden" name="round_number" value="0">
+            {% if active_round == 0 %}
+                <button type="submit" class="btn btn-danger" style="pointer-events:none; opacity:0.85;">
+                    &#9679; No Round Active
+                </button>
+            {% else %}
+                <button type="submit" class="btn btn-danger">Deactivate All Rounds</button>
+            {% endif %}
+        </form>
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.5rem;">
+        Currently active: <strong>{% if active_round %}Round {{ active_round }}{% else %}None{% endif %}</strong>
+    </p>
+</div>
+
+<!-- Quick Reveal / Hide All Challenges (Round 3) -->
+<div class="section">
+    <h2>&#128065; Challenge Visibility (Round 3)</h2>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <form method="POST" class="inline-form" action="{{ url_for('admin.reveal_all_challenges') }}">
+            <button type="submit" class="btn btn-success">&#128065; Reveal All Challenges</button>
+        </form>
+        <form method="POST" class="inline-form" action="{{ url_for('admin.hide_all_challenges') }}">
+            <button type="submit" class="btn btn-danger">&#128683; Hide All Challenges</button>
+        </form>
+    </div>
 </div>
 
 <!-- Event Controls -->
@@ -86,7 +124,7 @@
             {% if event_active %}Event is LIVE{% else %}Event is STOPPED{% endif %}
         </span>
     </div>
-    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.5rem;">When stopped, all flag submissions are rejected.</p>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.5rem;">When stopped, all flag submissions are rejected and the leaderboard is frozen.</p>
 </div>
 
 <!-- Leaderboard Controls -->
@@ -100,46 +138,6 @@
             <button type="submit" class="btn btn-success">Set Leaderboard Public</button>
         {% endif %}
     </form>
-</div>
-
-<!-- Pending User Approvals -->
-<div class="section">
-    <h2>&#128100; Pending User Approvals</h2>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Registered</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if pending_users %}
-                    {% for user in pending_users %}
-                    <tr>
-                        <td><strong>{{ user.username }}</strong></td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td>
-                            <div class="actions">
-                                <form method="POST" class="inline-form" action="{{ url_for('admin.approve_user', user_id=user.id) }}">
-                                    <button type="submit" class="btn btn-success" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Approve</button>
-                                </form>
-                                <form method="POST" class="inline-form" action="{{ url_for('admin.reject_user', user_id=user.id) }}">
-                                    <button type="submit" class="btn btn-danger" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Reject</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr><td colspan="4">No pending user approvals.</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
 </div>
 
 <!-- Pending Flag Approvals -->
@@ -207,7 +205,6 @@
                     <th>User</th>
                     <th>Email</th>
                     <th>Role</th>
-                    <th>Status</th>
                     <th>Assigned To</th>
                     <th>Score</th>
                     <th>Created</th>
@@ -220,13 +217,6 @@
                     <td>{{ user.username }}</td>
                     <td>{{ user.email }}</td>
                     <td>{% if user.is_admin %}Admin{% elif user.is_evaluator %}Evaluator{% else %}Participant{% endif %}</td>
-                    <td>
-                        {% if user.is_approved %}
-                            <span style="color:var(--green); font-weight:700;">Approved</span>
-                        {% else %}
-                            <span style="color:var(--red); font-weight:700;">Pending</span>
-                        {% endif %}
-                    </td>
                     <td>
                         {% if user.is_admin or user.is_evaluator %}
                             <span style="font-size:0.78rem; color:var(--text-muted);">—</span>
@@ -241,11 +231,6 @@
                     <td>
                         {% if user.id != current_user.id %}
                         <div class="actions">
-                            {% if not user.is_approved %}
-                            <form method="POST" class="inline-form" action="{{ url_for('admin.approve_user', user_id=user.id) }}">
-                                <button type="submit" class="btn btn-success" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Approve</button>
-                            </form>
-                            {% endif %}
                             {% if not user.is_admin %}
                             <form method="POST" class="inline-form" action="{{ url_for('admin.toggle_evaluator', user_id=user.id) }}">
                                 {% if user.is_evaluator %}
@@ -269,9 +254,6 @@
         </table>
     </div>
 </div>
-
-<div class="section">
-    <h2>Challenge and Flag Operations</h2>
 
 <!-- Evaluator ↔ Participant Assignment -->
 <div class="section">

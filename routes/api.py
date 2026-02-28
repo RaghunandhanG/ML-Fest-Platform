@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, FileResponse
 
 from config import UPLOAD_FOLDER
-from models import User, Challenge, Flag, Submission, Score
+from models import User, Challenge, Flag, Submission, Score, get_site_config
 from challenge_catalog import get_resources_by_order
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -36,8 +36,8 @@ def _submit_flag_internal(request: Request, challenge_id, submitted_flag, flag_o
     user = request.state.user
 
     # Event active?
-    admin_user = db.query(User).filter_by(is_admin=True).first()
-    if not admin_user or not admin_user.event_active:
+    config = get_site_config(db)
+    if not config.event_active:
         return JSONResponse(
             {"success": False, "message": "The event has not started yet or has ended. Submissions are currently closed."},
             403,
@@ -218,9 +218,12 @@ def get_challenge_status(request: Request, challenge_id: int):
 def get_leaderboard(request: Request):
     db = request.state.db
     user = request.state.user
-    admin_user = db.query(User).filter_by(is_admin=True).first()
-    is_public = bool(admin_user and admin_user.is_leaderboard_public)
+    config = get_site_config(db)
+    is_public = config.leaderboard_public
     is_admin_viewer = user.is_authenticated and user.is_admin
+
+    if not config.event_active and not is_admin_viewer:
+        return JSONResponse({"success": False, "message": "Event is not active. Leaderboard is frozen."}, 403)
 
     if not is_public and not is_admin_viewer:
         return JSONResponse({"success": False, "message": "Leaderboard is private"}, 403)
@@ -297,9 +300,6 @@ def _download_resource(request: Request, challenge_id: int, filename: str):
     user = request.state.user
     if not user.is_authenticated:
         return JSONResponse({"success": False, "message": "Login required to download files"}, 401)
-    if not user.is_approved and not user.is_admin:
-        return JSONResponse({"success": False, "message": "Your account must be approved before downloading files"}, 403)
-
     db = request.state.db
     ch = db.query(Challenge).get(challenge_id)
     if not ch:

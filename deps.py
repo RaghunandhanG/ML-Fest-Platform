@@ -66,6 +66,7 @@ def render(template_name: str, request: Request, **context):
         "get_flashed_messages": lambda with_categories=False: (
             flashes if with_categories else [m for _, m in flashes]
         ),
+        "site_config": getattr(request.state, "site_config", None),
         **context,
     }
     return templates.TemplateResponse(template_name, ctx)

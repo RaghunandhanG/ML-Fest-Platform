@@ -52,7 +52,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         });
         const data = await res.json();
         if (data.success) {
-            window.location.href = '/challenges';
+            // Small delay to let the browser commit the Set-Cookie before navigating
+            setTimeout(function() { window.location.href = '/dashboard'; }, 150);
         } else {
             msg.innerHTML = '<div class="alert alert-error" style="margin-bottom:0.75rem;">' + data.message + '</div>';
         }

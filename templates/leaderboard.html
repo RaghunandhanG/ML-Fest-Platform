@@ -32,6 +32,7 @@ async function loadLeaderboard() {
         var data = await response.json();
         if (data.success) { displayLeaderboard(data.leaderboard); }
         else if (data.message === 'Leaderboard is private') { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-private">The leaderboard is currently private.</div>'; }
+        else if (data.message && data.message.indexOf('not active') !== -1) { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-private">Event is not active. Leaderboard is frozen.</div>'; }
         else { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-error">Failed to load leaderboard.</div>'; }
     } catch (error) { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-error">Failed to load leaderboard.</div>'; }
 }

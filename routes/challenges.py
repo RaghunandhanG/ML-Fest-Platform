@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
 from deps import render
-from models import User, Challenge
+from models import User, Challenge, get_site_config
 from challenge_catalog import get_resources_by_order
 
 router = APIRouter(tags=["challenges"])
@@ -16,8 +16,8 @@ def _is_staff(request: Request) -> bool:
 
 
 def _get_event_active(db) -> bool:
-    admin_user = db.query(User).filter_by(is_admin=True).first()
-    return bool(admin_user and admin_user.event_active)
+    config = get_site_config(db)
+    return config.event_active
 
 
 @router.get("/challenges", name="challenges.list_challenges")

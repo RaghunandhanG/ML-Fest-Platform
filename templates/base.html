@@ -202,10 +202,18 @@
             </a>
             <ul class="nav-links">
                 <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('round2.index') }}">Round 2</a></li>
-                <li><a href="{{ url_for('challenges.list_challenges') }}">Round 3</a></li>
-                <li><a href="{{ url_for('challenges.leaderboard') }}">Leaderboard</a></li>
                 {% if current_user.is_authenticated %}
+                    {# Admin sees all round tabs; others see only the active round #}
+                    {% if current_user.is_admin or (site_config and site_config.active_round == 1) %}
+                    <li><a href="{{ url_for('round1.index') }}">Round 1</a></li>
+                    {% endif %}
+                    {% if current_user.is_admin or (site_config and site_config.active_round == 2) %}
+                    <li><a href="{{ url_for('round2.index') }}">Round 2</a></li>
+                    {% endif %}
+                    {% if current_user.is_admin or (site_config and site_config.active_round == 3) %}
+                    <li><a href="{{ url_for('challenges.list_challenges') }}">Round 3</a></li>
+                    <li><a href="{{ url_for('challenges.leaderboard') }}">Leaderboard</a></li>
+                    {% endif %}
                     <li><a href="{{ url_for('challenges.dashboard') }}">Dashboard</a></li>
                     {% if current_user.is_admin %}
                         <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
@@ -245,8 +253,6 @@
         <div class="footer-inner">
             <span>&copy; 2026 <strong>Team Qernels CTF</strong></span>
             <div class="footer-links">
-                <a href="{{ url_for('challenges.list_challenges') }}">Challenges</a>
-                <a href="{{ url_for('challenges.leaderboard') }}">Leaderboard</a>
                 {% if current_user.is_authenticated %}
                 <a href="{{ url_for('challenges.dashboard') }}">Dashboard</a>
                 {% endif %}

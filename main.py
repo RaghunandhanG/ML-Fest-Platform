@@ -19,7 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from config import SECRET_KEY, UPLOAD_FOLDER
 from database import Base, engine, SessionLocal
 from deps import render, ANONYMOUS
-from models import User, Challenge, Flag
+from models import User, Challenge, Flag, SiteConfig, get_site_config
 from challenge_catalog import CATALOG, get_catalog_by_order
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -113,11 +113,17 @@ def ensure_challenge_files():
                     f.write(f"Source: {item['url']}\n")
 
 
+def ensure_site_config(db):
+    """Ensure a SiteConfig singleton row exists."""
+    get_site_config(db)
+
+
 def init_data():
     db = SessionLocal()
     try:
         sync_challenge_catalog(db)
         ensure_default_admin(db)
+        ensure_site_config(db)
     finally:
         db.close()
     ensure_challenge_files()
@@ -152,7 +158,11 @@ async def db_session_middleware(request: Request, call_next):
             request.state.user = user if user else ANONYMOUS
         else:
             request.state.user = ANONYMOUS
+        request.state.site_config = get_site_config(session)
         response = await call_next(request)
+        # Prevent browsers/proxies from caching user-specific pages
+        response.headers.setdefault("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        response.headers.setdefault("Pragma", "no-cache")
         return response
     except Exception:
         session.rollback()
@@ -161,7 +171,15 @@ async def db_session_middleware(request: Request, call_next):
         session.close()
 
 
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SECRET_KEY,
+    session_cookie="ctf_session",
+    max_age=14 * 24 * 60 * 60,
+    same_site="lax",
+    https_only=False,
+    path="/",
+)
 
 
 # ── Static files ─────────────────────────────────────────────────────────────
@@ -171,7 +189,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 
 # ── Include routers ──────────────────────────────────────────────────────────
 
-from routes import auth, api, challenges, admin, evaluator, evaluation, round2  # noqa: E402
+from routes import auth, api, challenges, admin, evaluator, evaluation, round1, round2  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(api.router)
@@ -179,6 +197,7 @@ app.include_router(challenges.router)
 app.include_router(admin.router)
 app.include_router(evaluator.router)
 app.include_router(evaluation.router)
+app.include_router(round1.router)
 app.include_router(round2.router)
 
 
