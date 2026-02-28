@@ -127,7 +127,7 @@
     <div class="stat-tile">
         <div class="stat-tile-shadow"></div>
         <div class="stat-tile-inner">
-            <div class="num">{{ current_user.total_points }}</div>
+            <div class="num">{{ computed_total }}</div>
             <div class="lbl">Total Points</div>
         </div>
     </div>
@@ -148,7 +148,7 @@
     <div class="stat-tile">
         <div class="stat-tile-shadow"></div>
         <div class="stat-tile-inner">
-            <div class="num">{{ (current_user.total_points / 500 * 100)|int }}%</div>
+            <div class="num">{{ (computed_total / 500 * 100)|int }}%</div>
             <div class="lbl">Overall</div>
         </div>
     </div>

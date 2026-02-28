@@ -76,6 +76,14 @@ class User(Base):
             or 0
         )
 
+    def get_last_correct_submission_time(self, db):
+        """Return the latest submitted_at timestamp for a correct flag."""
+        return (
+            db.query(func.max(Submission.submitted_at))
+            .filter(Submission.user_id == self.id, Submission.is_correct == True)
+            .scalar()
+        )
+
     def get_completed_challenges(self, db):
         return (
             db.query(distinct(Submission.challenge_id))

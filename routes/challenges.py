@@ -66,7 +66,13 @@ def dashboard(request: Request):
     db = request.state.db
     challenges = db.query(Challenge).order_by(Challenge.order_position).all()
     progress_data = {ch.id: ch.get_user_progress(db, user.id) for ch in challenges}
-    return render("dashboard.html", request, challenges=challenges, progress=progress_data)
+    # Compute actual total points from Score table
+    computed_total = user.get_total_points(db)
+    # Keep cached column in sync
+    if user.total_points != computed_total:
+        user.total_points = computed_total
+        db.commit()
+    return render("dashboard.html", request, challenges=challenges, progress=progress_data, computed_total=computed_total)
 
 
 @router.get("/leaderboard", name="challenges.leaderboard")

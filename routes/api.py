@@ -231,19 +231,37 @@ def get_leaderboard(request: Request):
     users = (
         db.query(User)
         .filter(User.is_admin == False, User.is_evaluator == False)
-        .order_by(User.total_points.desc())
-        .limit(100)
         .all()
     )
+    # Compute actual points and last correct submission time
+    scored = []
+    for u in users:
+        pts = u.get_total_points(db)
+        last_time = u.get_last_correct_submission_time(db)
+        # Keep cached column in sync
+        if u.total_points != pts:
+            u.total_points = pts
+        scored.append((u, pts, last_time))
+    # Sort: highest points first; on tie, earlier last-submission time wins
+    scored.sort(key=lambda x: (-x[1], x[2] or datetime.max))
+    scored = scored[:100]
+    db.commit()
+
     lb = []
-    for rank, u in enumerate(users, 1):
+    for rank, (u, pts, last_time) in enumerate(scored, 1):
+        # Format time with millisecond precision
+        if last_time:
+            time_str = last_time.strftime("%Y-%m-%dT%H:%M:%S") + ".{:03d}Z".format(int(last_time.microsecond / 1000))
+        else:
+            time_str = None
         lb.append(
             {
                 "rank": rank,
                 "username": u.username,
-                "total_points": u.total_points,
+                "total_points": pts,
                 "challenges_completed": len(u.get_completed_challenges(db)),
                 "joined_at": u.created_at.isoformat(),
+                "last_submission_at": time_str,
             }
         )
     return {"success": True, "leaderboard": lb}

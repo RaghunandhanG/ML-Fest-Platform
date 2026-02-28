@@ -121,6 +121,9 @@ def approve_score(request: Request, score_id: int, flag_points: int = Form(0), e
     score.approved_at = datetime.utcnow()
     score.leaderboard_visible = True
 
+    # Flush so the is_approved=True change is visible to the SUM query
+    db.flush()
+
     target_user = db.query(User).get(score.user_id)
     if target_user:
         target_user.total_points = target_user.get_total_points(db)
