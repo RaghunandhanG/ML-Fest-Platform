@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}{{ challenge.title }} - Team Qernels CTF{% endblock %}
+
+{% block extra_css %}
+<style>
+.ch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-dark);
+    margin-bottom: 1.75rem;
+}
+.ch-header-left h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+}
+.ch-header-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.83rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.ch-header-meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+/* Progress bar - brutalist */
+.progress-section {
+    position: relative;
+    margin-bottom: 1.75rem;
+}
+.progress-section-shadow {
+    position: absolute; inset: 0;
+    background: var(--border-dark);
+    border-radius: var(--radius);
+    transform: translate(4px, 4px);
+}
+.progress-section-inner {
+    position: relative; z-index: 2;
+    background: var(--bg-input);
+    border: var(--border-w) solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+}
+.progress-section h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    font-weight: 800;
+}
+.progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+.progress-row strong { color: var(--text); }
+.progress-bar-bg {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-dark);
+}
+.progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+/* Description */
+.desc-section { margin-bottom: 1.75rem; }
+.section-label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+}
+.desc-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+}
+
+/* Download section - brutalist */
+.download-section {
+    position: relative;
+    margin-bottom: 1.75rem;
+}
+.download-section-shadow {
+    position: absolute; inset: 0;
+    background: var(--border-dark);
+    border-radius: var(--radius);
+    transform: translate(4px, 4px);
+}
+.download-section-inner {
+    position: relative; z-index: 2;
+    background: var(--bg-card);
+    border: var(--border-w) solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+}
+.download-section h3 {
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+.download-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg);
+    border: 2px solid var(--border-dark);
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 3px 3px 0 var(--border-dark);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.download-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--border-dark);
+}
+
+/* Flags grid - brutalist */
+.flags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+}
+.flag-card {
+    position: relative;
+}
+.flag-card-shadow {
+    position: absolute; inset: 0;
+    background: var(--border-dark);
+    border-radius: var(--radius);
+    transform: translate(4px, 4px);
+}
+.flag-card-inner {
+    position: relative; z-index: 2;
+    background: var(--bg-card);
+    border: var(--border-w) solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    transition: transform 0.2s;
+}
+.flag-card:hover .flag-card-inner { transform: translate(-1px, -1px); }
+.flag-card-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--red);
+    margin-bottom: 0.4rem;
+}
+.flag-card-pts {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+.flag-hint {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    background: var(--bg-input);
+    border-left: 4px solid var(--accent);
+    padding: 0.45rem 0.75rem;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+.flag-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.flag-input-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.55rem 0.75rem;
+    border: 2px solid var(--border-dark);
+    border-radius: var(--radius);
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 0.85rem;
+    background: var(--bg-input);
+    color: var(--text);
+    box-shadow: 2px 2px 0 var(--border-dark);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.flag-input-row input:focus {
+    outline: none;
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--border-dark);
+}
+.flag-input-row input:disabled {
+    background: #dcfce7;
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 2px 2px 0 var(--green);
+}
+.flag-status {
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-top: 0.4rem;
+    min-height: 1.2rem;
+}
+.status-ok { color: var(--green); }
+.status-pending { color: var(--accent-hover); }
+.status-err { color: var(--red); }
+
+/* Messages */
+#messages .msg {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    border: 2px solid var(--border-dark);
+}
+.msg-success { background: #f0fdf4; color: var(--green); }
+.msg-error   { background: #fff0f1; color: var(--red); }
+
+@media (max-width: 560px) {
+    .flag-input-row { flex-direction: column; }
+    .flag-input-row .btn { width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="ch-header">
+    <div class="ch-header-left">
+        <div style="margin-bottom:0.5rem;">
+            <a href="{{ url_for('challenges.list_challenges') }}" style="color:var(--text-muted); font-size:0.82rem; text-decoration:none;">&larr; Challenges</a>
+        </div>
+        <h1>{{ challenge.title }}</h1>
+        <div class="ch-header-meta">
+            <span class="badge badge-{{ challenge.difficulty.lower() }}">{{ challenge.difficulty }}</span>
+            <span>&#128193; {{ challenge.category }}</span>
+            <span>&#11088; {{ challenge.total_points }} pts &middot; {{ challenge.flags|length }} flags</span>
+        </div>
+    </div>
+</div>
+
+<!-- Event status banner -->
+{% if not event_active %}
+<div class="alert alert-warning" style="margin-bottom:1.75rem;">
+    <strong>Event not active.</strong> The event has not started yet or has ended. Flag submissions are currently closed.
+</div>
+{% endif %}
+
+<!-- Progress (authenticated) -->
+{% if current_user.is_authenticated %}
+<div class="progress-section">
+    <div class="progress-section-shadow"></div>
+    <div class="progress-section-inner">
+    <h3>Your Progress</h3>
+    <div class="progress-row">
+        <span>{{ progress.completed_flags }}/{{ progress.total_flags }} flags approved
+            {% if progress.pending_flags %} &middot; <span style="color:var(--accent);">{{ progress.pending_flags }} pending</span>{% endif %}
+        </span>
+        <strong>{{ progress.points_earned }} / {{ progress.total_possible }} pts</strong>
+    </div>
+    {% set pct = (progress.completed_flags / progress.total_flags * 100)|int if progress.total_flags > 0 else 0 %}
+    <div class="progress-bar-bg">
+        <div class="progress-bar-fill" data-pct="{{ pct }}"></div>
+    </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info" style="margin-bottom:1.75rem;">
+    <strong>Tip:</strong> <a href="{{ url_for('auth.login') }}" style="color:var(--blue); font-weight:700;">Log in</a> to submit flags and earn points.
+</div>
+{% endif %}
+
+<!-- Description -->
+<div class="desc-section">
+    <div class="section-label">Description</div>
+    <p class="desc-text">{{ challenge.description }}</p>
+</div>
+
+<!-- Downloads -->
+{% if resources %}
+{% if current_user.is_authenticated and current_user.is_approved %}
+<div class="download-section">
+    <div class="download-section-shadow"></div>
+    <div class="download-section-inner">
+        <h3>Challenge Files</h3>
+        <div class="download-links">
+            {% for resource in resources %}
+            <a href="{{ url_for('api.download_challenge_resource', challenge_id=challenge.id, filename=resource.local_name) }}" class="download-btn">
+                &#8659; {{ resource.display_name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% elif current_user.is_authenticated and not current_user.is_approved %}
+<div class="alert alert-warning" style="margin-bottom:1.75rem;">
+    <strong>Downloads locked:</strong> Your account is pending admin approval. Files will be available once approved.
+</div>
+{% else %}
+<div class="alert alert-info" style="margin-bottom:1.75rem;">
+    <strong>Downloads locked:</strong> <a href="{{ url_for('auth.login') }}" style="color:var(--blue); font-weight:700;">Log in</a> to access challenge files.
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Points Breakdown -->
+<div class="download-section" style="margin-bottom:1.75rem;">
+    <div class="download-section-shadow"></div>
+    <div class="download-section-inner">
+        <h3>Points Breakdown</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+            <thead>
+                <tr style="border-bottom:2px solid var(--border-dark);">
+                    <th style="text-align:left; padding:0.4rem 0.6rem; font-weight:800;">Component</th>
+                    <th style="text-align:center; padding:0.4rem 0.6rem; font-weight:800;">Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if challenge.id == 1 %}
+                <tr><td style="padding:0.4rem 0.6rem;">Flag</td><td style="text-align:center; font-weight:700;">1</td></tr>
+                <tr><td style="padding:0.4rem 0.6rem;">Explanation</td><td style="text-align:center; font-weight:700;">1</td></tr>
+                <tr style="border-top:2px solid var(--border-dark); background:var(--bg-input);"><td style="padding:0.4rem 0.6rem; font-weight:800;">Total</td><td style="text-align:center; font-weight:800; color:var(--red);">2</td></tr>
+                {% elif challenge.id == 2 %}
+                <tr><td style="padding:0.4rem 0.6rem;">Flag</td><td style="text-align:center; font-weight:700;">1</td></tr>
+                <tr><td style="padding:0.4rem 0.6rem;">Explanation</td><td style="text-align:center; font-weight:700;">2</td></tr>
+                <tr style="border-top:2px solid var(--border-dark); background:var(--bg-input);"><td style="padding:0.4rem 0.6rem; font-weight:800;">Total</td><td style="text-align:center; font-weight:800; color:var(--red);">3</td></tr>
+                {% elif challenge.id == 3 %}
+                <tr><td style="padding:0.4rem 0.6rem;">Flag</td><td style="text-align:center; font-weight:700;">2</td></tr>
+                <tr><td style="padding:0.4rem 0.6rem;">Explanation</td><td style="text-align:center; font-weight:700;">2</td></tr>
+                <tr style="border-top:2px solid var(--border-dark); background:var(--bg-input);"><td style="padding:0.4rem 0.6rem; font-weight:800;">Total</td><td style="text-align:center; font-weight:800; color:var(--red);">4</td></tr>
+                {% elif challenge.id == 4 %}
+                <tr><td style="padding:0.4rem 0.6rem;">Flag</td><td style="text-align:center; font-weight:700;">2</td></tr>
+                <tr><td style="padding:0.4rem 0.6rem;">Explanation</td><td style="text-align:center; font-weight:700;">1</td></tr>
+                <tr style="border-top:2px solid var(--border-dark); background:var(--bg-input);"><td style="padding:0.4rem 0.6rem; font-weight:800;">Total</td><td style="text-align:center; font-weight:800; color:var(--red);">3</td></tr>
+                {% elif challenge.id == 5 %}
+                <tr><td style="padding:0.4rem 0.6rem;">Flag</td><td style="text-align:center; font-weight:700;">2</td></tr>
+                <tr><td style="padding:0.4rem 0.6rem;">Explanation</td><td style="text-align:center; font-weight:700;">1</td></tr>
+                <tr style="border-top:2px solid var(--border-dark); background:var(--bg-input);"><td style="padding:0.4rem 0.6rem; font-weight:800;">Total</td><td style="text-align:center; font-weight:800; color:var(--red);">3</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+        <p style="margin-top:0.75rem; font-size:0.78rem; color:var(--text-muted); border-top:1px solid #e5e7eb; padding-top:0.6rem;">
+            <strong>Explanation rubric:</strong> Full marks = correct concept with specific technical details &middot; 50% = describes what but not why &middot; Zero = no explanation or AI-generated text
+        </p>
+    </div>
+</div>
+
+<!-- Flags -->
+<div class="section-label">Flag Submission</div>
+<div id="messages"></div>
+
+<div class="flags-grid">
+    {% for flag in challenge.flags %}
+    <div class="flag-card">
+        <div class="flag-card-shadow"></div>
+        <div class="flag-card-inner">
+        <div class="flag-card-title">Flag {{ flag.flag_order }}</div>
+        <div class="flag-card-pts">{{ flag.points_value }} pts</div>
+        {% if flag.description %}
+        <div class="flag-hint">Hint: {{ flag.description }}</div>
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+        <div class="flag-input-row">
+            <input type="text"
+                   placeholder="flag{...}"
+                   data-flag-id="{{ flag.flag_order }}"
+                   data-challenge-id="{{ challenge.id }}">
+            <button class="btn btn-primary btn-sm flag-submit-btn"
+                    data-flag-id="{{ flag.flag_order }}"
+                    data-challenge-id="{{ challenge.id }}">Submit</button>
+        </div>
+        <div id="status-{{ flag.flag_order }}" class="flag-status"></div>
+        {% else %}
+        <p style="font-size:0.83rem; color:var(--text-muted);"><a href="{{ url_for('auth.login') }}">Login</a> to submit</p>
+        {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if current_user.is_authenticated %}
+<script>
+async function submitFlag(flagOrder, challengeId) {
+    var input = document.querySelector('[data-flag-id="' + flagOrder + '"][placeholder]');
+    var flagValue = input.value.trim();
+    var statusDiv = document.getElementById('status-' + flagOrder);
+    var messagesDiv = document.getElementById('messages');
+
+    if (!flagValue) {
+        statusDiv.innerHTML = '<span class="status-err">Please enter a flag</span>';
+        return;
+    }
+
+    statusDiv.innerHTML = '<span style="color:var(--text-muted)">Checking...</span>';
+
+    try {
+        var response = await fetch('/api/challenges/' + challengeId + '/flags/' + flagOrder + '/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ flag: flagValue })
+        });
+        var data = await response.json();
+
+        if (data.success) {
+            statusDiv.innerHTML = '<span class="status-pending">&#10003; Submitted &mdash; pending approval</span>';
+            messagesDiv.innerHTML = '<div class="msg msg-success">' + data.message + '</div>';
+            input.disabled = true;
+            setTimeout(function() { location.reload(); }, 1500);
+        } else {
+            statusDiv.innerHTML = '<span class="status-err">&#10007; Incorrect flag</span>';
+            messagesDiv.innerHTML = '<div class="msg msg-error">' + data.message + '</div>';
+        }
+    } catch (err) {
+        statusDiv.innerHTML = '<span class="status-err">Error submitting flag</span>';
+        console.error(err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Progress bar widths from data attributes
+    document.querySelectorAll('.progress-bar-fill[data-pct]').forEach(function(el) {
+        el.style.width = el.getAttribute('data-pct') + '%';
+    });
+
+    // Submit buttons via data attributes
+    document.querySelectorAll('.flag-submit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            submitFlag(this.getAttribute('data-flag-id'), this.getAttribute('data-challenge-id'));
+        });
+    });
+
+    // Enter key on flag inputs
+    document.querySelectorAll('input[data-flag-id]').forEach(function(input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitFlag(this.getAttribute('data-flag-id'), this.getAttribute('data-challenge-id'));
+            }
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

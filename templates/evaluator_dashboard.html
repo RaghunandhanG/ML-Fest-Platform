@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluator Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section {
+        border: var(--border-w) solid var(--border-dark);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        background: var(--bg-card);
+    }
+    .section h2 {
+        margin-bottom: 0.75rem;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+        text-align: left;
+        border-bottom: 1px solid #ececef;
+        padding: 0.65rem;
+        font-size: 0.88rem;
+        vertical-align: middle;
+    }
+    th { font-weight: 800; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .inline-form { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .pts-input {
+        width: 60px;
+        padding: 0.4rem 0.5rem;
+        border: 2px solid var(--border-dark);
+        border-radius: var(--radius);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-align: center;
+        background: var(--bg-input);
+    }
+    .pts-max { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+    .empty-msg { color: var(--text-muted); font-size: 0.9rem; padding: 1.5rem 0; text-align: center; }
+    .badge-approved {
+        display: inline-block;
+        background: #dcfce7;
+        color: var(--green);
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 0.15rem 0.55rem;
+        border-radius: 4px;
+        border: 1px solid var(--green);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom:0.25rem;">Evaluator Dashboard</h1>
+<p style="color:var(--text-muted); margin-bottom:1.5rem;">Review flag submissions, set points, and approve or reject.</p>
+
+<!-- Pending Approvals -->
+<div class="section">
+    <h2>&#9203; Pending Flag Submissions</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Challenge</th>
+                    <th>Submitted Flag</th>
+                    <th>Submitted</th>
+                    <th>Flag Points</th>
+                    <th>Explanation Points</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if pending_rows %}
+                    {% for row in pending_rows %}
+                    <tr>
+                        <td><strong>{{ row.score.user.username }}</strong></td>
+                        <td>{{ row.score.challenge.title }}</td>
+                        <td><code style="background:var(--bg-input); padding:0.15rem 0.4rem; border-radius:4px;">{{ row.latest_flag_value }}</code></td>
+                        <td>{{ row.submitted_at.strftime('%Y-%m-%d %H:%M') if row.submitted_at else '-' }}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:0.3rem;">
+                                <input type="number" name="flag_points" form="approve-{{ row.score.id }}" class="pts-input" min="0" max="{{ row.flag_points_max }}" value="{{ row.flag_points_max }}" required>
+                                <span class="pts-max">/ {{ row.flag_points_max }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:0.3rem;">
+                                <input type="number" name="explanation_points" form="approve-{{ row.score.id }}" class="pts-input" min="0" max="{{ row.explanation_points_max }}" value="0" required>
+                                <span class="pts-max">/ {{ row.explanation_points_max }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <form method="POST" id="approve-{{ row.score.id }}" class="inline-form" action="{{ url_for('evaluator.approve_score', score_id=row.score.id) }}">
+                                    <button type="submit" class="btn btn-success" style="padding:0.4rem 0.7rem; font-size:0.82rem;">Approve</button>
+                                </form>
+                                <form method="POST" class="inline-form" action="{{ url_for('evaluator.reject_score', score_id=row.score.id) }}">
+                                    <button type="submit" class="btn btn-danger" style="padding:0.4rem 0.7rem; font-size:0.82rem;">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="empty-msg">No pending submissions to review.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recently Approved -->
+<div class="section">
+    <h2>&#9989; Recently Evaluated</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Challenge</th>
+                    <th>Points Awarded</th>
+                    <th>Breakdown</th>
+                    <th>Evaluated By</th>
+                    <th>Evaluated At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_approved %}
+                    {% for score in recent_approved %}
+                    <tr>
+                        <td>{{ score.user.username }}</td>
+                        <td>{{ score.challenge.title }}</td>
+                        <td><span class="badge-approved">{{ score.points }} pts</span></td>
+                        <td style="font-size:0.78rem; color:var(--text-muted);">Flag: {{ score.flag_points or 0 }} &middot; Expl: {{ score.explanation_points or 0 }}</td>
+                        <td>{{ score.approved_by_user.username if score.approved_by_user else '-' }}</td>
+                        <td>{{ score.approved_at.strftime('%Y-%m-%d %H:%M') if score.approved_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" class="empty-msg">No recent evaluations.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Assigned Participants -->
+<div class="section">
+    <h2>&#128101; My Assigned Participants</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if assigned_participants %}
+                    {% for p in assigned_participants %}
+                    <tr>
+                        <td><strong>{{ p.username }}</strong></td>
+                        <td>{{ p.email }}</td>
+                        <td>{{ p.total_points }} pts</td>
+                        <td>
+                            {% if p.is_approved %}
+                                <span style="color:var(--green); font-weight:700;">Approved</span>
+                            {% else %}
+                                <span style="color:var(--red); font-weight:700;">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="4" class="empty-msg">No participants assigned to you yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

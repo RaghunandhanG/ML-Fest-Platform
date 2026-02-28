@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section {
+        border: 1px solid #e5e5e7;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.25rem;
+    }
+    .section h2 {
+        margin-bottom: 0.75rem;
+        font-size: 1.15rem;
+    }
+    .table-wrap {
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        text-align: left;
+        border-bottom: 1px solid #ececef;
+        padding: 0.65rem;
+        font-size: 0.92rem;
+        vertical-align: top;
+    }
+    .actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .inline-form {
+        display: inline;
+    }
+    .challenge-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.6rem;
+    }
+    .challenge-form textarea,
+    .challenge-form input {
+        width: 100%;
+        padding: 0.55rem;
+        border: 1px solid #d8d8db;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+    .challenge-form textarea {
+        min-height: 78px;
+        resize: vertical;
+        grid-column: 1 / -1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Admin Dashboard</h1>
+<p>Only admin users can view and operate this page.</p>
+
+<!-- Quick Reveal / Hide All -->
+<div style="display:flex; gap:0.5rem; margin:1rem 0 1.25rem; flex-wrap:wrap;">
+    <form method="POST" class="inline-form" action="{{ url_for('admin.reveal_all_challenges') }}">
+        <button type="submit" class="btn btn-success">&#128065; Reveal All Challenges</button>
+    </form>
+    <form method="POST" class="inline-form" action="{{ url_for('admin.hide_all_challenges') }}">
+        <button type="submit" class="btn btn-danger">&#128683; Hide All Challenges</button>
+    </form>
+</div>
+
+<!-- Event Controls -->
+<div class="section">
+    <h2>&#9889; Event Controls</h2>
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+        <form method="POST" action="{{ url_for('admin.toggle_event') }}">
+            {% if event_active %}
+                <button type="submit" class="btn btn-danger">&#9724; Stop Event</button>
+            {% else %}
+                <button type="submit" class="btn btn-success">&#9654; Start Event</button>
+            {% endif %}
+        </form>
+        <span style="font-size:0.88rem; font-weight:700; color:{% if event_active %}var(--green){% else %}var(--red){% endif %};">
+            {% if event_active %}Event is LIVE{% else %}Event is STOPPED{% endif %}
+        </span>
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.5rem;">When stopped, all flag submissions are rejected.</p>
+</div>
+
+<!-- Leaderboard Controls -->
+<div class="section">
+    <h2>Leaderboard Controls</h2>
+    <p>Total approved score entries: <strong>{{ total_approved_scores }}</strong></p>
+    <form method="POST" action="{{ url_for('admin.toggle_leaderboard') }}">
+        {% if is_leaderboard_public %}
+            <button type="submit" class="btn btn-danger">Set Leaderboard Private</button>
+        {% else %}
+            <button type="submit" class="btn btn-success">Set Leaderboard Public</button>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Pending User Approvals -->
+<div class="section">
+    <h2>&#128100; Pending User Approvals</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if pending_users %}
+                    {% for user in pending_users %}
+                    <tr>
+                        <td><strong>{{ user.username }}</strong></td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <div class="actions">
+                                <form method="POST" class="inline-form" action="{{ url_for('admin.approve_user', user_id=user.id) }}">
+                                    <button type="submit" class="btn btn-success" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Approve</button>
+                                </form>
+                                <form method="POST" class="inline-form" action="{{ url_for('admin.reject_user', user_id=user.id) }}">
+                                    <button type="submit" class="btn btn-danger" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="4">No pending user approvals.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pending Flag Approvals -->
+<div class="section">
+    <h2>Pending Flag Approvals</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Challenge</th>
+                    <th>Submitted Flag</th>
+                    <th>Submitted At</th>
+                    <th>Flag Points</th>
+                    <th>Explanation Points</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if pending_rows %}
+                    {% for row in pending_rows %}
+                    <tr>
+                        <td>{{ row.score.user.username }}</td>
+                        <td>{{ row.score.challenge.title }}</td>
+                        <td><code>{{ row.latest_flag_value }}</code></td>
+                        <td>{{ row.submitted_at.strftime('%Y-%m-%d %H:%M') if row.submitted_at else '-' }}</td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:0.25rem;">
+                                <input type="number" name="flag_points" form="admin-approve-{{ row.score.id }}" style="width:50px;padding:0.3rem;border:2px solid #111827;border-radius:6px;text-align:center;font-weight:700;" min="0" max="{{ row.flag_points_max }}" value="{{ row.flag_points_max }}" required>
+                                <span style="font-size:0.75rem;color:#6b7280;">/ {{ row.flag_points_max }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:0.25rem;">
+                                <input type="number" name="explanation_points" form="admin-approve-{{ row.score.id }}" style="width:50px;padding:0.3rem;border:2px solid #111827;border-radius:6px;text-align:center;font-weight:700;" min="0" max="{{ row.explanation_points_max }}" value="0" required>
+                                <span style="font-size:0.75rem;color:#6b7280;">/ {{ row.explanation_points_max }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <form method="POST" id="admin-approve-{{ row.score.id }}" class="inline-form" action="{{ url_for('admin.approve_score', score_id=row.score.id) }}">
+                                    <button type="submit" class="btn btn-success" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Approve</button>
+                                </form>
+                                <form method="POST" class="inline-form" action="{{ url_for('admin.reject_score', score_id=row.score.id) }}">
+                                    <button type="submit" class="btn btn-danger" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6">No pending approvals.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="section">
+    <h2>User Management</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Score</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{% if user.is_admin %}Admin{% elif user.is_evaluator %}Evaluator{% else %}Participant{% endif %}</td>
+                    <td>
+                        {% if user.is_approved %}
+                            <span style="color:var(--green); font-weight:700;">Approved</span>
+                        {% else %}
+                            <span style="color:var(--red); font-weight:700;">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_admin or user.is_evaluator %}
+                            <span style="font-size:0.78rem; color:var(--text-muted);">—</span>
+                        {% elif user.assigned_evaluator %}
+                            <span style="font-weight:600;">{{ user.assigned_evaluator.username }}</span>
+                        {% else %}
+                            <span style="color:var(--red); font-size:0.78rem; font-weight:700;">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.total_points }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if user.id != current_user.id %}
+                        <div class="actions">
+                            {% if not user.is_approved %}
+                            <form method="POST" class="inline-form" action="{{ url_for('admin.approve_user', user_id=user.id) }}">
+                                <button type="submit" class="btn btn-success" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Approve</button>
+                            </form>
+                            {% endif %}
+                            {% if not user.is_admin %}
+                            <form method="POST" class="inline-form" action="{{ url_for('admin.toggle_evaluator', user_id=user.id) }}">
+                                {% if user.is_evaluator %}
+                                    <button type="submit" class="btn btn-secondary" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Remove Evaluator</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-primary" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Make Evaluator</button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                            <form method="POST" class="inline-form" action="{{ url_for('admin.delete_user', user_id=user.id) }}">
+                                <button type="submit" class="btn btn-danger" style="padding:0.45rem 0.7rem;font-size:0.82rem;">Delete User</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        Current Admin Account
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Challenge and Flag Operations</h2>
+
+<!-- Evaluator ↔ Participant Assignment -->
+<div class="section">
+    <h2>&#128101; Evaluator Assignment</h2>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.75rem;">Each participant is assigned to exactly one evaluator. Evaluators only see submissions from their assigned participants.</p>
+
+    <!-- Assign / Reassign individual -->
+    <div style="border:1px solid #ececef; border-radius:8px; padding:0.8rem; margin-bottom:0.8rem;">
+        <h3 style="font-size:0.95rem; font-weight:700; margin-bottom:0.5rem;">Assign / Reassign Participant</h3>
+        <form method="POST" action="{{ url_for('admin.assign_evaluator') }}" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:flex-end;">
+            <div>
+                <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.2rem;">Participant</label>
+                <select name="participant_id" style="padding:0.45rem 0.6rem; border:2px solid #111827; border-radius:6px; font-size:0.85rem; min-width:160px;" required>
+                    <option value="">— Select —</option>
+                    {% for p in participants %}
+                    <option value="{{ p.id }}">{{ p.username }}{% if p.assigned_evaluator %} (→ {{ p.assigned_evaluator.username }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.2rem;">Evaluator</label>
+                <select name="evaluator_id" style="padding:0.45rem 0.6rem; border:2px solid #111827; border-radius:6px; font-size:0.85rem; min-width:160px;" required>
+                    <option value="">— Select —</option>
+                    {% for ev in evaluators %}
+                    <option value="{{ ev.id }}">{{ ev.username }}{% if ev.is_admin %} (Admin){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Assign</button>
+        </form>
+    </div>
+
+    <!-- Bulk assign unassigned -->
+    <div style="border:1px solid #ececef; border-radius:8px; padding:0.8rem; margin-bottom:0.8rem;">
+        <h3 style="font-size:0.95rem; font-weight:700; margin-bottom:0.5rem;">Bulk Assign Unassigned</h3>
+        <form method="POST" action="{{ url_for('admin.bulk_assign_evaluator') }}" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:flex-end;">
+            <div>
+                <label style="font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.2rem;">Assign all unassigned to</label>
+                <select name="evaluator_id" style="padding:0.45rem 0.6rem; border:2px solid #111827; border-radius:6px; font-size:0.85rem; min-width:160px;" required>
+                    <option value="">— Select Evaluator —</option>
+                    {% for ev in evaluators %}
+                    <option value="{{ ev.id }}">{{ ev.username }}{% if ev.is_admin %} (Admin){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success btn-sm">Bulk Assign</button>
+        </form>
+    </div>
+
+    <!-- Current assignments table -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Participant</th>
+                    <th>Assigned Evaluator</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participants %}
+                <tr>
+                    <td><strong>{{ p.username }}</strong></td>
+                    <td>
+                        {% if p.assigned_evaluator %}
+                            <span style="color:var(--green); font-weight:700;">{{ p.assigned_evaluator.username }}</span>
+                        {% else %}
+                            <span style="color:var(--red); font-weight:700;">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.assigned_evaluator %}
+                        <div class="actions">
+                            <form method="POST" action="{{ url_for('admin.assign_evaluator') }}" style="display:flex; gap:0.3rem; align-items:center;">
+                                <input type="hidden" name="participant_id" value="{{ p.id }}">
+                                <select name="evaluator_id" style="padding:0.3rem 0.5rem; border:2px solid #111827; border-radius:6px; font-size:0.78rem;" required>
+                                    {% for ev in evaluators %}
+                                    <option value="{{ ev.id }}" {% if ev.id == p.assigned_evaluator_id %}selected{% endif %}>{{ ev.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary" style="padding:0.3rem 0.5rem;font-size:0.78rem;">Reassign</button>
+                            </form>
+                            <form method="POST" class="inline-form" action="{{ url_for('admin.unassign_evaluator', user_id=p.id) }}">
+                                <button type="submit" class="btn btn-danger" style="padding:0.3rem 0.5rem;font-size:0.78rem;">Unassign</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span style="font-size:0.82rem; color:var(--text-muted);">Use form above to assign</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not participants %}
+                <tr><td colspan="3" style="color:var(--text-muted); text-align:center;">No participants registered yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Challenge and Flag Operations</h2>
+    <p>Each challenge keeps only one final verification flag. Editing points updates challenge and final flag points.</p>
+    {% for challenge in challenges %}
+    <div style="border:1px solid #ececef;border-radius:8px;padding:0.8rem;margin-bottom:0.8rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+            <span style="font-weight:800;">{{ challenge.title }}
+                {% if challenge.is_revealed %}
+                    <span style="color:var(--green); font-size:0.78rem; font-weight:700;"> &#9679; Visible</span>
+                {% else %}
+                    <span style="color:var(--red); font-size:0.78rem; font-weight:700;"> &#9679; Hidden</span>
+                {% endif %}
+            </span>
+            <form method="POST" class="inline-form" action="{{ url_for('admin.toggle_challenge_reveal', challenge_id=challenge.id) }}">
+                {% if challenge.is_revealed %}
+                    <button type="submit" class="btn btn-secondary" style="padding:0.35rem 0.6rem;font-size:0.78rem;">Hide</button>
+                {% else %}
+                    <button type="submit" class="btn btn-success" style="padding:0.35rem 0.6rem;font-size:0.78rem;">Reveal</button>
+                {% endif %}
+            </form>
+        </div>
+        <form method="POST" class="challenge-form" action="{{ url_for('admin.update_challenge', challenge_id=challenge.id) }}">
+            <input type="text" name="title" value="{{ challenge.title }}" placeholder="Title">
+            <input type="text" name="category" value="{{ challenge.category }}" placeholder="Category">
+            <input type="text" name="difficulty" value="{{ challenge.difficulty }}" placeholder="Difficulty">
+            <input type="number" name="total_points" value="{{ challenge.total_points }}" min="1" placeholder="Points">
+            <input type="text" name="flag_content" value="{{ challenge.flags[0].flag_content if challenge.flags else '' }}" placeholder="Final Flag Content">
+            <textarea name="description" placeholder="Description">{{ challenge.description }}</textarea>
+            <div>
+                <button type="submit" class="btn btn-primary">Save Challenge</button>
+            </div>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

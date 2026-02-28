@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Challenges - Team Qernels CTF{% endblock %}
+
+{% block extra_css %}
+<style>
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+.ch-card { position: relative; }
+.ch-card-shadow {
+    position: absolute; inset: 0;
+    background: var(--border-dark);
+    border-radius: var(--radius-lg);
+    transform: translate(6px, 6px);
+}
+.ch-card-inner {
+    position: relative; z-index: 1;
+    background: var(--bg-card);
+    border: var(--border-w) solid var(--border-dark);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: transform 0.2s ease;
+}
+.ch-card:hover .ch-card-inner { transform: translate(-2px, -2px); }
+.ch-card-top {
+    padding: 1.25rem 1.5rem 1rem;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;
+}
+.ch-title { font-size: 1rem; font-weight: 800; line-height: 1.3; color: var(--text); }
+.ch-category { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+.ch-body {
+    padding: 0 1.5rem 1rem; flex: 1;
+    display: flex; flex-direction: column; gap: 0.5rem;
+}
+.ch-meta { font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; font-weight: 600; }
+.ch-progress-wrap {
+    background: var(--bg-input);
+    border: 2px solid var(--border-dark);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem; color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+.ch-progress-bar-bg { height: 6px; background: #e5e7eb; border-radius: 3px; margin-top: 0.5rem; overflow: hidden; }
+.ch-progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+.ch-footer {
+    padding: 0.85rem 1.5rem;
+    border-top: 2px solid var(--border-dark);
+    background: var(--bg);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.ch-points { font-weight: 800; font-size: 0.95rem; color: var(--text); }
+.empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-title">Challenges</div>
+<div class="page-subtitle">Five progressive challenges &mdash; each worth up to 100 points.</div>
+
+<div class="challenges-grid">
+    {% for challenge in challenges %}
+    <div class="ch-card">
+        <div class="ch-card-shadow"></div>
+        <div class="ch-card-inner">
+            <div class="ch-card-top">
+                <div>
+                    <div class="ch-title">{{ challenge.title }}</div>
+                    <div class="ch-category">{{ challenge.category }}</div>
+                </div>
+                <span class="badge badge-{{ challenge.difficulty.lower() }}">{{ challenge.difficulty }}</span>
+            </div>
+            <div class="ch-body">
+                <div class="ch-meta">&#127937; {{ challenge.flags_count }} flags</div>
+                {% if current_user.is_authenticated and challenge.user_progress %}
+                <div class="ch-progress-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>{{ challenge.user_progress.completed_flags }}/{{ challenge.user_progress.total_flags }} approved</span>
+                        <span style="color:var(--red); font-weight:800;">{{ challenge.user_progress.points_earned }} pts</span>
+                    </div>
+                    {% set pct = (challenge.user_progress.completed_flags / challenge.user_progress.total_flags * 100)|int if challenge.user_progress.total_flags > 0 else 0 %}
+                    <div class="ch-progress-bar-bg">
+                        <div class="ch-progress-bar-fill" style="width:{{ pct }}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="ch-footer">
+                <span class="ch-points">{{ challenge.total_points }} pts</span>
+                <a href="{{ url_for('challenges.view_challenge', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm">Open</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not challenges %}
+<div class="empty-state">No challenges available yet.</div>
+{% endif %}
+{% endblock %}

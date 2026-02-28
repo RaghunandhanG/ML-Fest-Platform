@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Login - Team Qernels CTF{% endblock %}
+{% block extra_css %}
+<style>
+.auth-wrap { max-width: 420px; margin: 2rem auto; position: relative; }
+.auth-shadow { position: absolute; inset: 0; background: var(--border-dark); border-radius: var(--radius-lg); transform: translate(8px, 8px); }
+.auth-inner { position: relative; z-index: 2; background: var(--bg-card); border: var(--border-w) solid var(--border-dark); border-radius: var(--radius-lg); padding: 2rem 2rem; }
+.auth-inner h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+.auth-sub { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.75rem; }
+.auth-form .btn-primary { width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.25rem; }
+.auth-footer { text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.auth-footer a { color: var(--red); font-weight: 700; text-decoration: none; }
+.auth-footer a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-shadow"></div>
+    <div class="auth-inner">
+        <h1>Welcome back</h1>
+        <p class="auth-sub">Sign in to continue to Team Qernels CTF</p>
+        <form class="auth-form" id="loginForm">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" name="username" required placeholder="Your username" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" name="password" required placeholder="Your password" autocomplete="current-password">
+            </div>
+            <div id="loginMsg"></div>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+        <div class="auth-footer">
+            No account? <a href="{{ url_for('auth.register') }}">Create one</a>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('loginMsg');
+    msg.innerHTML = '';
+    try {
+        const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.href = '/challenges';
+        } else {
+            msg.innerHTML = '<div class="alert alert-error" style="margin-bottom:0.75rem;">' + data.message + '</div>';
+        }
+    } catch (err) {
+        msg.innerHTML = '<div class="alert alert-error" style="margin-bottom:0.75rem;">Login failed. Please try again.</div>';
+    }
+});
+</script>
+{% endblock %}

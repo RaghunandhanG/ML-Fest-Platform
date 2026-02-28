@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard - Team Qernels CTF{% endblock %}
+{% block extra_css %}
+<style>
+.lb-wrap { position: relative; margin-top: 1.25rem; }
+.lb-wrap-shadow { position: absolute; inset: 0; background: var(--border-dark); border-radius: var(--radius-lg); transform: translate(8px, 8px); }
+.lb-wrap-inner { position: relative; z-index: 2; background: var(--bg-card); border: var(--border-w) solid var(--border-dark); border-radius: var(--radius-lg); overflow: hidden; }
+.lb-table { width: 100%; border-collapse: collapse; }
+.lb-table thead th { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 0.75rem 1rem; border-bottom: 2px solid var(--border-dark); text-align: left; background: var(--bg); }
+.lb-table tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
+.lb-table tbody tr:last-child td { border-bottom: none; }
+.lb-table tbody tr:hover { background: var(--bg-input); }
+.rank-chip { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; font-size: 0.78rem; font-weight: 800; background: #f3f4f6; color: var(--text-muted); border: 2px solid var(--border-dark); }
+.rank-1 { background: #fef3c7; color: #92400e; }
+.rank-2 { background: #f1f5f9; color: #475569; }
+.rank-3 { background: #fff7ed; color: #9a3412; }
+.lb-username { font-weight: 800; color: var(--text); }
+.lb-pts { font-weight: 800; color: var(--red); }
+.lb-private, .lb-error { text-align: center; padding: 3rem 1rem; font-size: 0.95rem; font-weight: 600; }
+.lb-private { color: var(--text-muted); }
+.lb-error { color: var(--red); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-title">Leaderboard</div>
+<div class="page-subtitle">Global rankings updated in real time.</div>
+<div id="leaderboardContainer"><div class="spinner"></div></div>
+<script>
+async function loadLeaderboard() {
+    try {
+        var response = await fetch('/api/leaderboard');
+        var data = await response.json();
+        if (data.success) { displayLeaderboard(data.leaderboard); }
+        else if (data.message === 'Leaderboard is private') { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-private">The leaderboard is currently private.</div>'; }
+        else { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-error">Failed to load leaderboard.</div>'; }
+    } catch (error) { document.getElementById('leaderboardContainer').innerHTML = '<div class="lb-error">Failed to load leaderboard.</div>'; }
+}
+function displayLeaderboard(leaderboard) {
+    var container = document.getElementById('leaderboardContainer');
+    var html = '<div class="lb-wrap"><div class="lb-wrap-shadow"></div><div class="lb-wrap-inner"><table class="lb-table"><thead><tr><th>Rank</th><th>Username</th><th>Points</th><th>Challenges</th><th>Joined</th></tr></thead><tbody>';
+    leaderboard.forEach(function(entry) {
+        var rc = entry.rank <= 3 ? ' rank-' + entry.rank : '';
+        var joinDate = new Date(entry.joined_at).toLocaleDateString();
+        html += '<tr><td><span class="rank-chip' + rc + '">' + entry.rank + '</span></td><td><span class="lb-username">' + entry.username + '</span></td><td><span class="lb-pts">' + entry.total_points + '</span></td><td>' + entry.challenges_completed + '</td><td style="color:var(--text-muted);font-size:0.82rem;">' + joinDate + '</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+    container.innerHTML = html;
+}
+loadLeaderboard();
+setInterval(loadLeaderboard, 30000);
+</script>
+{% endblock %}

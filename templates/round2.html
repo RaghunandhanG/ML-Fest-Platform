@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Round 2 — ML Debug Challenge{% endblock %}
+
+{% block extra_css %}
+<style>
+    .r2-hero {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+    .r2-hero h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.4rem;
+    }
+    .r2-hero .badge-round {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--text);
+        border: 2px solid var(--border-dark);
+        border-radius: 20px;
+        padding: 0.25rem 0.9rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.75rem;
+        box-shadow: 2px 2px 0 var(--border-dark);
+    }
+    .r2-hero p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.7;
+    }
+
+    .r2-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .r2-card {
+        position: relative;
+    }
+    .r2-card-shadow {
+        position: absolute; inset: 0;
+        background: var(--border-dark);
+        border-radius: var(--radius-lg);
+        transform: translate(5px, 5px);
+    }
+    .r2-card-inner {
+        position: relative;
+        z-index: 2;
+        background: var(--bg-card);
+        border: var(--border-w) solid var(--border-dark);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        transition: transform 0.2s;
+    }
+    .r2-card:hover .r2-card-inner {
+        transform: translate(-2px, -2px);
+    }
+    .r2-card-icon {
+        font-size: 1.5rem;
+    }
+    .r2-card-title {
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+    .r2-card-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.55;
+    }
+    .r2-card-meta {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    .r2-card-actions {
+        margin-top: auto;
+        padding-top: 0.5rem;
+    }
+    .r2-card-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .r2-instructions {
+        position: relative;
+        margin-top: 1rem;
+    }
+    .r2-instructions-shadow {
+        position: absolute; inset: 0;
+        background: var(--border-dark);
+        border-radius: var(--radius);
+        transform: translate(4px, 4px);
+    }
+    .r2-instructions-inner {
+        position: relative; z-index: 2;
+        background: var(--bg-input);
+        border: var(--border-w) solid var(--border-dark);
+        border-radius: var(--radius);
+        padding: 1.25rem 1.5rem;
+    }
+    .r2-instructions h2 {
+        font-size: 1rem;
+        font-weight: 800;
+        margin-bottom: 0.6rem;
+    }
+    .r2-instructions ol {
+        padding-left: 1.25rem;
+        font-size: 0.88rem;
+        color: var(--text);
+        line-height: 1.8;
+    }
+    .r2-instructions code {
+        background: #e5e7eb;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="r2-hero">
+    <span class="badge-round">Round 2</span>
+    <h1>ML Debug Challenge</h1>
+    <p>
+        Find and fix the bugs in the provided ML notebooks.
+        Download the files below, solve the issues, and submit your corrected notebooks.
+    </p>
+</div>
+
+<div class="r2-grid">
+    {% for file in files %}
+    <div class="r2-card">
+        <div class="r2-card-shadow"></div>
+        <div class="r2-card-inner">
+            <div class="r2-card-icon">{{ file.icon }}</div>
+            <div class="r2-card-title">{{ file.display }}</div>
+            <div class="r2-card-desc">{{ file.description }}</div>
+            <div class="r2-card-meta">{{ file.name }} &middot; {{ file.size }}</div>
+            <div class="r2-card-actions">
+                {% if file.exists %}
+                <a href="{{ url_for('round2.download', filename=file.name) }}" class="btn btn-primary btn-sm">
+                    &#8595; Download
+                </a>
+                {% else %}
+                <span class="btn btn-secondary btn-sm" style="opacity:0.5; cursor:not-allowed;">
+                    File unavailable
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="r2-instructions">
+    <div class="r2-instructions-shadow"></div>
+    <div class="r2-instructions-inner">
+        <h2>&#128736; How to get started</h2>
+        <ol>
+            <li>Download all the files above.</li>
+            <li>Run <code>setup.bat</code> to create a virtual environment and install dependencies (or use <code>pip install -r requirements.txt</code>).</li>
+            <li>Open the classification notebook (<code>ml_debug_classification_final.ipynb</code>) and the regression notebook (<code>ml_debug_regression_final.ipynb</code>).</li>
+            <li>Find the intentional bugs in each notebook and fix them.</li>
+            <li>Use <code>titanic_data.csv</code> as the dataset for the classification notebook.</li>
+            <li>Submit your corrected notebooks once done.</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

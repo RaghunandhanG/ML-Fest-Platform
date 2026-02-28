@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FCA847">
+    <title>{% block title %}Team Qernels CTF{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #FFFDF8;
+            --bg-card: #fff4da;
+            --bg-card-alt: #fafafa;
+            --bg-input: #E8F0FE;
+            --border-dark: #111827;
+            --border-w: 3px;
+            --text: #111827;
+            --text-muted: #6b7280;
+            --accent: #ffc480;
+            --accent-hover: #f5a623;
+            --accent-light: #fff4da;
+            --green: #16a34a;
+            --red: #FE4A60;
+            --blue: #2563eb;
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .shadow-box { position: relative; }
+        .shadow-box-shadow {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            background: var(--border-dark); border-radius: var(--radius-lg);
+            transform: translate(8px, 8px);
+        }
+        .shadow-box-content {
+            position: relative; z-index: 2;
+            background: var(--bg-card); border: var(--border-w) solid var(--border-dark);
+            border-radius: var(--radius-lg); padding: 2rem 2.5rem;
+        }
+        .shadow-box-sm .shadow-box-shadow { transform: translate(4px, 4px); }
+        .shadow-box-alt .shadow-box-content { background: var(--bg-card-alt); }
+
+        header {
+            background: var(--bg); border-bottom: 2px solid var(--border-dark);
+            padding: 0.6rem 1.5rem; position: sticky; top: 0; z-index: 100;
+        }
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            max-width: 1100px; margin: 0 auto;
+        }
+        .logo {
+            color: var(--text); font-size: 1.1rem; font-weight: 800;
+            text-decoration: none; display: flex; align-items: center;
+            gap: 0.5rem; letter-spacing: -0.02em;
+        }
+        .logo img { height: 32px; border-radius: 6px; border: 2px solid var(--border-dark); }
+        .nav-links { display: flex; gap: 0.25rem; align-items: center; list-style: none; }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
+            font-weight: 600; padding: 0.4rem 0.75rem; border-radius: var(--radius);
+            transition: background 0.15s, color 0.15s;
+        }
+        .nav-links a:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+        .nav-pill {
+            background: var(--accent) !important; color: var(--text) !important;
+            font-weight: 700 !important; border: 2px solid var(--border-dark) !important;
+            box-shadow: 3px 3px 0 var(--border-dark);
+        }
+        .nav-pill:hover {
+            background: var(--accent-hover) !important;
+            transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--border-dark);
+        }
+        .nav-user-chip {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: var(--bg-input); border: 2px solid var(--border-dark);
+            border-radius: 20px; padding: 0.25rem 0.75rem;
+            font-size: 0.82rem; color: var(--text); font-weight: 600;
+        }
+        .nav-pts { color: var(--red); font-weight: 800; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 0.4rem; padding: 0.55rem 1.2rem; border-radius: var(--radius);
+            text-decoration: none; cursor: pointer; border: 2px solid var(--border-dark);
+            font-weight: 700; font-size: 0.9rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            white-space: nowrap; box-shadow: 3px 3px 0 var(--border-dark);
+        }
+        .btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--border-dark); }
+        .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-dark); }
+        .btn-primary { background: var(--accent); color: var(--text); }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: var(--bg); color: var(--text); }
+        .btn-secondary:hover { background: #f3f0e8; }
+        .btn-danger { background: var(--red); color: #fff; }
+        .btn-danger:hover { background: #e5384d; }
+        .btn-success { background: #dcfce7; color: var(--green); }
+        .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.82rem; box-shadow: 2px 2px 0 var(--border-dark); }
+
+        .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.25rem; flex: 1; }
+
+        .alert {
+            padding: 0.85rem 1.1rem; border-radius: var(--radius);
+            margin-bottom: 1rem; font-size: 0.9rem; font-weight: 600;
+            border: 2px solid var(--border-dark);
+        }
+        .alert-success { background: #f0fdf4; color: var(--green); }
+        .alert-error   { background: #fff0f1; color: var(--red); }
+        .alert-info    { background: var(--bg-input); color: var(--blue); }
+        .alert-warning { background: var(--accent-light); color: #92400e; }
+
+        .spinner {
+            border: 3px solid #e5e7eb; border-top: 3px solid var(--border-dark);
+            border-radius: 50%; width: 36px; height: 36px;
+            animation: spin 0.8s linear infinite; margin: 2rem auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .page-title { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.25rem; }
+        .page-subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+        footer {
+            border-top: 2px solid var(--border-dark); background: var(--bg);
+            padding: 1.5rem 2rem; margin-top: 3rem;
+        }
+        .footer-inner {
+            max-width: 1100px; margin: 0 auto; display: flex;
+            justify-content: space-between; align-items: center; flex-wrap: wrap;
+            gap: 0.75rem; font-size: 0.82rem; color: var(--text-muted);
+        }
+        .footer-inner a { color: var(--text-muted); text-decoration: none; font-weight: 600; transition: color 0.15s; }
+        .footer-inner a:hover { color: var(--text); }
+        .footer-links { display: flex; gap: 1.25rem; }
+
+        .gi-card { position: relative; }
+        .gi-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--border-dark); border-radius: var(--radius-lg);
+            transform: translate(6px, 6px); z-index: 0;
+        }
+        .gi-card-inner {
+            position: relative; z-index: 1; background: var(--bg-card);
+            border: var(--border-w) solid var(--border-dark);
+            border-radius: var(--radius-lg); overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .gi-card:hover .gi-card-inner { transform: translate(-2px, -2px); }
+
+        .badge {
+            display: inline-block; padding: 0.15rem 0.6rem; border-radius: 4px;
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em;
+            text-transform: uppercase; border: 2px solid var(--border-dark);
+        }
+        .badge-easy   { background: #dcfce7; color: #15803d; }
+        .badge-medium { background: #fef3c7; color: #b45309; }
+        .badge-hard   { background: #fee2e2; color: #b91c1c; }
+        .badge-expert { background: #ede9fe; color: #6d28d9; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 0.65rem 0.9rem;
+            border: var(--border-w) solid var(--border-dark); border-radius: var(--radius);
+            font-size: 0.95rem; background: var(--bg-input); color: var(--text);
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 3px 3px 0 var(--border-dark);
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none; transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0 var(--border-dark);
+        }
+
+        @media (max-width: 768px) {
+            nav { flex-wrap: wrap; gap: 0.75rem; }
+            .nav-links { flex-wrap: wrap; gap: 0.25rem; }
+            .container { margin: 1rem auto; }
+            .shadow-box-content { padding: 1.25rem; }
+            .shadow-box-shadow { transform: translate(5px, 5px); }
+            .footer-inner { flex-direction: column; text-align: center; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('index') }}" class="logo">
+                <img src="{{ url_for('static', filename='team_qernels_logo.jpeg') }}" alt="Team Qernels">
+                <span>Team Qernels</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('round2.index') }}">Round 2</a></li>
+                <li><a href="{{ url_for('challenges.list_challenges') }}">Round 3</a></li>
+                <li><a href="{{ url_for('challenges.leaderboard') }}">Leaderboard</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('challenges.dashboard') }}">Dashboard</a></li>
+                    {% if current_user.is_admin %}
+                        <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+                    {% endif %}
+                    {% if current_user.is_evaluator or current_user.is_admin %}
+                        <li><a href="{{ url_for('evaluator.dashboard') }}">Evaluate</a></li>
+                    {% endif %}
+                    <li>
+                        <span class="nav-user-chip">
+                            {{ current_user.username }}&nbsp;<span class="nav-pts">{{ current_user.total_points }} pts</span>
+                        </span>
+                    </li>
+                    <li><a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-sm">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                    <li><a href="{{ url_for('auth.register') }}" class="nav-pill btn">Register</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-inner">
+            <span>&copy; 2026 <strong>Team Qernels CTF</strong></span>
+            <div class="footer-links">
+                <a href="{{ url_for('challenges.list_challenges') }}">Challenges</a>
+                <a href="{{ url_for('challenges.leaderboard') }}">Leaderboard</a>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('challenges.dashboard') }}">Dashboard</a>
+                {% endif %}
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
