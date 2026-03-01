@@ -72,7 +72,10 @@ def dashboard(request: Request):
     if user.total_points != computed_total:
         user.total_points = computed_total
         db.commit()
-    return render("dashboard.html", request, challenges=challenges, progress=progress_data, computed_total=computed_total)
+    max_possible = sum(ch.total_points for ch in challenges)
+    completed_count = sum(1 for p in progress_data.values() if p["completed_flags"] > 0)
+    overall_pct = round(computed_total / max_possible * 100) if max_possible > 0 else 0
+    return render("dashboard.html", request, computed_total=computed_total, max_possible=max_possible, completed_count=completed_count, overall_pct=overall_pct)
 
 
 @router.get("/leaderboard", name="challenges.leaderboard")

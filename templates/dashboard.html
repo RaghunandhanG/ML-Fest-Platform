@@ -42,80 +42,7 @@
     margin-top: 0.25rem;
 }
 
-.prog-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
-    margin-top: 1.25rem;
-}
-.prog-card {
-    position: relative;
-}
-.prog-card-shadow {
-    position: absolute; inset: 0;
-    background: var(--border-dark);
-    border-radius: var(--radius);
-    transform: translate(5px, 5px);
-}
-.prog-card-inner {
-    position: relative; z-index: 2;
-    background: var(--bg-card);
-    border: var(--border-w) solid var(--border-dark);
-    border-radius: var(--radius);
-    padding: 1.25rem;
-    transition: transform 0.2s;
-}
-.prog-card:hover .prog-card-inner { transform: translate(-2px, -2px); }
-.prog-card h3 { font-size: 1rem; font-weight: 800; margin: 0 0 0.5rem; color: var(--text); }
-.prog-meta { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem; }
 
-.bar-track {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 4px;
-    overflow: hidden;
-    margin: 0.5rem 0;
-    border: 1px solid var(--border-dark);
-}
-.bar-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 4px;
-    transition: width 0.4s ease;
-}
-.bar-label {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-}
-
-.prog-link {
-    display: inline-block;
-    margin-top: 0.75rem;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.82rem;
-    font-weight: 700;
-    border-radius: var(--radius);
-    text-decoration: none;
-    border: 2px solid var(--border-dark);
-    box-shadow: 2px 2px 0 var(--border-dark);
-    transition: transform 0.15s, box-shadow 0.15s;
-}
-.prog-link:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 var(--border-dark);
-}
-.prog-link-go {
-    background: var(--accent);
-    color: var(--text);
-}
-.prog-link-done {
-    background: #dcfce7;
-    color: #166534;
-}
 </style>
 {% endblock %}
 
@@ -134,65 +61,16 @@
     <div class="stat-tile">
         <div class="stat-tile-shadow"></div>
         <div class="stat-tile-inner">
-            <div class="num" id="completedCount">0</div>
+            <div class="num">{{ completed_count }}</div>
             <div class="lbl">Completed</div>
         </div>
     </div>
     <div class="stat-tile">
         <div class="stat-tile-shadow"></div>
         <div class="stat-tile-inner">
-            <div class="num" id="flagCount">0</div>
-            <div class="lbl">Flags</div>
-        </div>
-    </div>
-    <div class="stat-tile">
-        <div class="stat-tile-shadow"></div>
-        <div class="stat-tile-inner">
-            <div class="num">{{ (computed_total / 500 * 100)|int }}%</div>
+            <div class="num">{{ overall_pct }}%</div>
             <div class="lbl">Overall</div>
         </div>
     </div>
 </div>
-
-<h2 style="font-size:1.15rem;font-weight:800;margin:1.5rem 0 0.25rem;color:var(--text);">Challenge Progress</h2>
-
-<div class="prog-grid">
-    {% for challenge in challenges %}
-    {% set p = progress[challenge.id] %}
-    {% set pct = (p.completed_flags / p.total_flags * 100)|int %}
-    <div class="prog-card">
-        <div class="prog-card-shadow"></div>
-        <div class="prog-card-inner">
-            <h3>{{ challenge.title }}</h3>
-            <div class="prog-meta">
-                <span class="badge badge-{{ challenge.difficulty|lower }}">{{ challenge.difficulty }}</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill" style="width:{{ pct }}%"></div></div>
-            <div class="bar-label">
-                <span>{{ p.completed_flags }}/{{ p.total_flags }} flags</span>
-                <span>{{ p.points_earned }}/{{ p.total_possible }} pts</span>
-            </div>
-            <a href="{{ url_for('challenges.view_challenge', challenge_id=challenge.id) }}"
-               class="prog-link {% if p.completed_flags == p.total_flags %}prog-link-done{% else %}prog-link-go{% endif %}">
-                {% if p.completed_flags == p.total_flags %}&#10003; Completed{% else %}Continue{% endif %}
-            </a>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<script>
-(function() {
-    var completedChallenges = 0;
-    var totalFlags = 0;
-    var progressData = {{ progress|tojson }};
-    for (var key in progressData) {
-        var p = progressData[key];
-        if (p.completed_flags === p.total_flags) completedChallenges++;
-        totalFlags += p.completed_flags;
-    }
-    document.getElementById('completedCount').textContent = completedChallenges;
-    document.getElementById('flagCount').textContent = totalFlags;
-})();
-</script>
 {% endblock %}
