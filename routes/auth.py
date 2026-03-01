@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from deps import render
-from models import User
+from models import User, generate_user_flags
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -68,6 +68,9 @@ async def register(request: Request):
     db.add(user)
     db.commit()
 
+    # Generate one unique flag per challenge for this user
+    generate_user_flags(user, db)
+
     return JSONResponse(
         {
             "success": True,
@@ -105,6 +108,9 @@ async def login(request: Request):
 
     user.last_login = datetime.utcnow()
     db.commit()
+
+    # Ensure per-user flags exist (handles new challenges or existing users)
+    generate_user_flags(user, db)
 
     # Clear any stale session data before setting the new user
     request.session.clear()

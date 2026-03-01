@@ -8,6 +8,8 @@ from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import re
+import hmac
+import hashlib
 
 from database import Base
 
@@ -224,6 +226,59 @@ class Score(Base):
 
     def __repr__(self):
         return f"<Score user={self.user_id} flag={self.flag_id} pts={self.points} approved={self.is_approved}>"
+
+
+# ── Per-User Unique Flags ─────────────────────────────────────────────────────
+
+class UserFlag(Base):
+    """Stores a unique flag value generated per user per challenge flag."""
+    __tablename__ = "user_flags"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    flag_id = Column(Integer, ForeignKey("flags.id"), nullable=False)
+    challenge_id = Column(Integer, ForeignKey("challenges.id"), nullable=False)
+    flag_value = Column(String(512), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("user_id", "flag_id", name="uf_user_flag_unique"),)
+
+    def __repr__(self):
+        return f"<UserFlag user={self.user_id} flag={self.flag_id}>"
+
+
+def generate_user_flags(user, db):
+    """Create unique flag values for every challenge flag for a user.
+
+    Called at registration so each user has their own flag set.
+    The flag format is  CTF{<original_body>_<12-hex-token>}  making it
+    unique while still recognisable per-challenge.
+    """
+    from config import SECRET_KEY
+
+    flags = db.query(Flag).all()
+    for flag in flags:
+        # Skip if already generated (idempotent)
+        if db.query(UserFlag).filter_by(user_id=user.id, flag_id=flag.id).first():
+            continue
+
+        msg = f"{user.id}:{flag.id}:{user.username}".encode()
+        token = hmac.new(SECRET_KEY.encode(), msg, hashlib.sha256).hexdigest()[:12]
+
+        content = flag.flag_content
+        if content.upper().startswith("CTF{") and content.endswith("}"):
+            inner = content[4:-1]
+            unique_flag = f"CTF{{{inner}_{token}}}"
+        else:
+            unique_flag = f"CTF{{ch{flag.challenge_id}_u{user.id}_{token}}}"
+
+        db.add(UserFlag(
+            user_id=user.id,
+            flag_id=flag.id,
+            challenge_id=flag.challenge_id,
+            flag_value=unique_flag,
+        ))
+    db.commit()
 
 
 # ── Site Configuration (singleton row) ────────────────────────────────────────

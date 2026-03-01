@@ -19,7 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from config import SECRET_KEY, UPLOAD_FOLDER
 from database import Base, engine, SessionLocal
 from deps import render, ANONYMOUS
-from models import User, Challenge, Flag, SiteConfig, get_site_config
+from models import User, Challenge, Flag, SiteConfig, UserFlag, get_site_config
 from challenge_catalog import CATALOG, get_catalog_by_order
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, FileResponse
 
 from config import UPLOAD_FOLDER
-from models import User, Challenge, Flag, Submission, Score, get_site_config
+from models import User, Challenge, Flag, Submission, Score, UserFlag, get_site_config
 from challenge_catalog import get_resources_by_order
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -63,12 +63,14 @@ def _submit_flag_internal(request: Request, challenge_id, submitted_flag, flag_o
         matching_flag = db.query(Flag).filter_by(challenge_id=challenge.id, flag_order=flag_order).first()
         if not matching_flag:
             return JSONResponse({"success": False, "message": f"Flag {flag_order} not found for this challenge"}, 404)
-        is_correct = matching_flag.validate_flag(submitted_flag)
+        user_flag = db.query(UserFlag).filter_by(user_id=user.id, flag_id=matching_flag.id).first()
+        is_correct = user_flag is not None and user_flag.flag_value.lower() == submitted_flag.strip().lower()
     else:
         matching_flag = None
         is_correct = False
         for flag in challenge.flags:
-            if flag.validate_flag(submitted_flag):
+            user_flag = db.query(UserFlag).filter_by(user_id=user.id, flag_id=flag.id).first()
+            if user_flag and user_flag.flag_value.lower() == submitted_flag.strip().lower():
                 matching_flag = flag
                 is_correct = True
                 break
