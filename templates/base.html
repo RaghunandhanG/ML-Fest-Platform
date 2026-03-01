@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#FCA847">
-    <title>{% block title %}Team Qernels CTF{% endblock %}</title>
+    <title>{% block title %}Team Qernels{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -244,12 +244,7 @@
 
     <footer>
         <div class="footer-inner">
-            <span>&copy; 2026 <strong>Team Qernels CTF</strong></span>
-            <div class="footer-links">
-                {% if current_user.is_authenticated %}
-                <a href="{{ url_for('challenges.dashboard') }}">Dashboard</a>
-                {% endif %}
-            </div>
+            <span>&copy; 2026 <strong>Team Qernels</strong></span>
         </div>
     </footer>
 
