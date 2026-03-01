@@ -61,7 +61,7 @@ def view_challenge(request: Request, challenge_id: int):
 def dashboard(request: Request):
     user = request.state.user
     if not user.is_authenticated:
-        return RedirectResponse(url="/auth/login", status_code=303)
+        return render("dashboard.html", request, login_required=True)
 
     db = request.state.db
     challenges = db.query(Challenge).order_by(Challenge.order_position).all()

@@ -55,7 +55,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     try {
         var res = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value, email: document.getElementById('email').value, password: pw.value }) });
         var data = await res.json();
-        if (data.success) { msg.innerHTML = '<div class="alert alert-success" style="margin-bottom:0.75rem;">' + data.message + '</div>'; setTimeout(function() { window.location.href = '/auth/login'; }, 2500); }
+        if (data.success) { msg.innerHTML = '<div class="alert alert-success" style="margin-bottom:0.75rem;">' + data.message + '</div>'; document.getElementById('submitBtn').disabled = true; }
         else { msg.innerHTML = '<div class="alert alert-error" style="margin-bottom:0.75rem;">' + data.message + '</div>'; }
     } catch (err) { msg.innerHTML = '<div class="alert alert-error" style="margin-bottom:0.75rem;">Registration failed. Please try again.</div>'; }
 });

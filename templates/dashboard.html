@@ -47,6 +47,17 @@
 {% endblock %}
 
 {% block content %}
+{% if login_required %}
+<div style="text-align:center; padding:3rem 1.5rem;">
+    <div style="font-size:4rem; margin-bottom:1rem;">&#128274;</div>
+    <h1 style="font-size:2rem; font-weight:800; margin-bottom:0.5rem;">Dashboard</h1>
+    <p style="color:var(--text-muted); font-size:1.05rem; max-width:520px; margin:0 auto 2rem; line-height:1.6;">
+        You need to be logged in to view your dashboard.<br>
+        Please <a href="/auth/login" style="color:var(--red);font-weight:700;">Sign in</a>
+        or <a href="/auth/register" style="color:var(--red);font-weight:700;">Create an account</a> to continue.
+    </p>
+</div>
+{% else %}
 <div class="page-title">Your Dashboard</div>
 <div class="page-subtitle">Track your progress across all challenges.</div>
 
@@ -82,5 +93,6 @@
 <div style="margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-card);border:var(--border-w) solid var(--border-dark);border-radius:var(--radius);font-size:0.9rem;font-weight:600;color:var(--text-muted);">
     Your Evaluator: <span style="font-style:italic;">Not yet assigned</span>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

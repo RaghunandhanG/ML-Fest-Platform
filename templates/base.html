@@ -203,10 +203,14 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('index') }}">Home</a></li>
                 {% if current_user.is_authenticated %}
-                    {% if site_config and site_config.active_round == 2 %}
+                    {% if site_config and site_config.active_round == 1 %}
+                    <li><a href="{{ url_for('round1.index') }}">Round 1</a></li>
+                    {% elif site_config and site_config.active_round == 2 %}
                     <li><a href="{{ url_for('round2.index') }}">Round 2</a></li>
                     {% elif site_config and site_config.active_round == 3 %}
                     <li><a href="{{ url_for('challenges.list_challenges') }}">Round 3</a></li>
+                    {% endif %}
+                    {% if site_config and site_config.active_round >= 1 %}
                     <li><a href="{{ url_for('challenges.leaderboard') }}">Leaderboard</a></li>
                     {% endif %}
                     <li><a href="{{ url_for('challenges.dashboard') }}">Dashboard</a></li>

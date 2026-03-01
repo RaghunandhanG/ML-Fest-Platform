@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, FileResponse
 
 from config import UPLOAD_FOLDER
-from models import User, Challenge, Flag, Submission, Score, UserFlag, get_site_config
+from models import User, Challenge, Flag, Submission, Score, UserFlag, QuizAttempt, get_site_config
 from challenge_catalog import get_resources_by_order
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -223,6 +223,7 @@ def get_leaderboard(request: Request):
     config = get_site_config(db)
     is_public = config.leaderboard_public
     is_admin_viewer = user.is_authenticated and user.is_admin
+    active_round = config.active_round
 
     if not config.event_active and not is_admin_viewer:
         return JSONResponse({"success": False, "message": "Event is not active. Leaderboard is frozen."}, 403)
@@ -235,23 +236,47 @@ def get_leaderboard(request: Request):
         .filter(User.is_admin == False, User.is_evaluator == False)
         .all()
     )
-    # Compute actual points and last correct submission time
+
+    # ── Round 1: leaderboard from QuizAttempt ─────────────────────────────────
+    if active_round == 1:
+        attempts = {a.user_id: a for a in db.query(QuizAttempt).filter_by(is_submitted=True).all()}
+        scored = []
+        for u in users:
+            att = attempts.get(u.id)
+            if att is None:
+                continue
+            scored.append((u, att.score, att.finished_at))
+        scored.sort(key=lambda x: (-x[1], x[2] or datetime.max))
+        scored = scored[:100]
+        lb = []
+        for rank, (u, pts, fin_at) in enumerate(scored, 1):
+            time_str = None
+            if fin_at:
+                time_str = fin_at.strftime("%Y-%m-%dT%H:%M:%S") + ".{:03d}Z".format(int(fin_at.microsecond / 1000))
+            lb.append({
+                "rank": rank,
+                "username": u.username,
+                "total_points": pts,
+                "challenges_completed": 0,
+                "joined_at": u.created_at.isoformat(),
+                "last_submission_at": time_str,
+            })
+        return {"success": True, "leaderboard": lb}
+
+    # ── Round 3 (or default): leaderboard from Score table ────────────────────
     scored = []
     for u in users:
         pts = u.get_total_points(db)
         last_time = u.get_last_correct_submission_time(db)
-        # Keep cached column in sync
         if u.total_points != pts:
             u.total_points = pts
         scored.append((u, pts, last_time))
-    # Sort: highest points first; on tie, earlier last-submission time wins
     scored.sort(key=lambda x: (-x[1], x[2] or datetime.max))
     scored = scored[:100]
     db.commit()
 
     lb = []
     for rank, (u, pts, last_time) in enumerate(scored, 1):
-        # Format time with millisecond precision
         if last_time:
             time_str = last_time.strftime("%Y-%m-%dT%H:%M:%S") + ".{:03d}Z".format(int(last_time.microsecond / 1000))
         else:

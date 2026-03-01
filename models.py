@@ -62,6 +62,10 @@ class User(Base):
         "Score", foreign_keys="Score.approved_by",
         backref="approved_by_user", lazy=True,
     )
+    quiz_attempts = relationship(
+        "QuizAttempt", back_populates="user_rel", lazy=True,
+        cascade="all, delete-orphan",
+    )
 
     # ── helpers ───────────────────────────────────────────────────────────
     def set_password(self, password):
@@ -303,3 +307,29 @@ def get_site_config(db):
         db.add(config)
         db.commit()
     return config
+
+
+# ── Quiz Attempt (Round 1 MCQ) ───────────────────────────────────────────────
+
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    finished_at = Column(DateTime, nullable=True)
+    answers = Column(Text, default="{}")        # JSON: {"0": 2, "3": 1, ...}  qIndex -> selectedOption
+    score = Column(Integer, default=0)
+    tab_switches = Column(Integer, default=0)
+    is_submitted = Column(Boolean, default=False)
+    question_order = Column(Text, default="[]") # JSON: shuffled list of question ids
+
+    user_rel = relationship(
+        "User",
+        back_populates="quiz_attempts",
+        passive_deletes=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_quiz_attempt_user"),
+    )

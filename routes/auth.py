@@ -75,7 +75,6 @@ async def register(request: Request):
         {
             "success": True,
             "message": "Registration successful! You can now login.",
-            "user": {"id": user.id, "username": user.username, "email": user.email},
         },
         201,
     )
@@ -120,12 +119,6 @@ async def login(request: Request):
         {
             "success": True,
             "message": "Login successful!",
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "total_points": user.total_points,
-            },
         },
         200,
     )

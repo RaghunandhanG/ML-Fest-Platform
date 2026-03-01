@@ -5,12 +5,13 @@ from starlette.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import json
 import os
+from markupsafe import Markup
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ── Jinja2 templates ─────────────────────────────────────────────────────────
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-templates.env.filters["tojson"] = lambda x: json.dumps(x)
+templates.env.filters["tojson"] = lambda x: Markup(json.dumps(x))
 
 
 # ── AnonymousUser (mimics Flask-Login when not logged in) ─────────────────────

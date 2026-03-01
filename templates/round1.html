@@ -1,50 +1,390 @@
 {% extends "base.html" %}
-{% block title %}Round 1 - Team Qernels{% endblock %}
+{% block title %}Round 1 — MCQ Quiz — Team Qernels{% endblock %}
 
 {% block extra_css %}
 <style>
-.r1-hero {
-    text-align: center;
-    padding: 4rem 1.5rem;
-}
-.r1-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-.r1-title {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.5rem;
-}
-.r1-subtitle {
-    color: var(--text-muted);
-    font-size: 1.05rem;
-    max-width: 480px;
-    margin: 0 auto 2rem;
-    line-height: 1.6;
-}
-.r1-badge {
-    display: inline-block;
-    background: var(--accent-light);
-    border: 2px solid var(--border-dark);
-    border-radius: var(--radius);
-    padding: 0.5rem 1.25rem;
-    font-weight: 800;
-    font-size: 0.9rem;
+/* ── Layout ────────────────────────────────────────────── */
+.quiz-wrap { max-width: 780px; margin: 0 auto; }
+
+/* ── Landing / Submitted hero ──────────────────────────── */
+.r1-hero { text-align: center; padding: 3rem 1.5rem; }
+.r1-icon { font-size: 4rem; margin-bottom: 1rem; }
+.r1-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+.r1-subtitle { color: var(--text-muted); font-size: 1.05rem; max-width: 520px; margin: 0 auto 2rem; line-height: 1.6; }
+
+/* ── Info cards on landing ─────────────────────────────── */
+.r1-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; max-width: 600px; margin: 0 auto 2rem; }
+.r1-info-card {
+    background: var(--bg-card); border: 2px solid var(--border-dark);
+    border-radius: var(--radius); padding: 1rem 1.25rem; text-align: center;
     box-shadow: 3px 3px 0 var(--border-dark);
+}
+.r1-info-card .ic-val { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.15rem; }
+.r1-info-card .ic-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.r1-rules { text-align: left; max-width: 520px; margin: 0 auto 2rem; background: var(--bg-card); border: 2px solid var(--border-dark); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: 4px 4px 0 var(--border-dark); }
+.r1-rules h3 { font-size: 0.9rem; margin-bottom: 0.75rem; }
+.r1-rules ul { padding-left: 1.25rem; }
+.r1-rules li { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.4rem; line-height: 1.5; }
+.r1-rules li strong { color: var(--text); }
+
+/* ── Top bar (timer + switches) ────────────────────────── */
+.quiz-topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;
+}
+.timer-chip, .switch-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: var(--bg-card); border: 2px solid var(--border-dark);
+    border-radius: 20px; padding: 0.35rem 1rem; font-size: 0.88rem; font-weight: 700;
+    box-shadow: 3px 3px 0 var(--border-dark);
+}
+.timer-chip.warn { background: #fee2e2; color: var(--red); }
+.switch-chip.warn { background: #fee2e2; color: var(--red); }
+
+/* ── Question card ─────────────────────────────────────── */
+.q-card {
+    background: var(--bg-card); border: var(--border-w) solid var(--border-dark);
+    border-radius: var(--radius-lg); padding: 2rem 2.5rem;
+    box-shadow: 6px 6px 0 var(--border-dark); margin-bottom: 1.5rem;
+}
+.q-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+.q-number { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); }
+.q-text { font-size: 1.12rem; font-weight: 700; line-height: 1.55; margin-bottom: 1.5rem; }
+
+/* ── Options ───────────────────────────────────────────── */
+.q-options { display: flex; flex-direction: column; gap: 0.65rem; }
+.q-option {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1rem; border: 2px solid var(--border-dark);
+    border-radius: var(--radius); cursor: pointer;
+    background: var(--bg); font-weight: 600; font-size: 0.95rem;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    box-shadow: 3px 3px 0 var(--border-dark);
+}
+.q-option:hover { background: var(--accent-light); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--border-dark); }
+.q-option.selected { background: var(--accent); }
+.q-option-letter {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border-dark);
+    font-weight: 800; font-size: 0.82rem; background: #fff; flex-shrink: 0;
+}
+.q-option.selected .q-option-letter { background: var(--border-dark); color: #fff; }
+
+/* ── Navigation ────────────────────────────────────────── */
+.q-nav { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+
+/* ── Question map ──────────────────────────────────────── */
+.q-map { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.5rem; }
+.q-map-dot {
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid var(--border-dark); border-radius: var(--radius);
+    font-size: 0.72rem; font-weight: 800; cursor: pointer;
+    background: var(--bg); transition: background 0.15s;
+}
+.q-map-dot.answered { background: var(--accent); }
+.q-map-dot.current { outline: 3px solid var(--blue); outline-offset: 1px; }
+
+/* ── Submit area ───────────────────────────────────────── */
+.submit-area { text-align: center; margin-top: 1rem; }
+.submit-area .btn { font-size: 1rem; padding: 0.7rem 2.5rem; }
+.answered-count { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.75rem; }
+
+/* ── Tab-switch overlay ────────────────────────────────── */
+.ts-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9999;
+    align-items: center; justify-content: center;
+}
+.ts-overlay.active { display: flex; }
+.ts-box {
+    background: #fff; border: 3px solid var(--border-dark); border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem; text-align: center; max-width: 420px;
+    box-shadow: 8px 8px 0 var(--border-dark);
+}
+.ts-box h2 { margin-bottom: 0.5rem; }
+.ts-box p { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+@media (max-width: 600px) {
+    .q-card { padding: 1.25rem; }
+    .q-map-dot { width: 26px; height: 26px; font-size: 0.65rem; }
+    .r1-info-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="r1-hero">
-    <div class="r1-icon">&#127942;</div>
-    <h1 class="r1-title">Round 1</h1>
-    <p class="r1-subtitle">
-        This round has concluded. Content and results will be made available here soon.
-        Stay tuned for updates!
-    </p>
-    <span class="r1-badge">Coming Soon</span>
+<div class="quiz-wrap">
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# STATE: login_required — user not logged in                 #}
+{# ═══════════════════════════════════════════════════════════ #}
+{% if state == "login_required" %}
+    <div class="r1-hero">
+        <div class="r1-icon">&#128274;</div>
+        <h1 class="r1-title">Round 1 — MCQ Quiz</h1>
+        <p class="r1-subtitle">
+            You need to be logged in to access this round.<br>
+            Please <a href="/auth/login" style="color:var(--red);font-weight:700;">Sign in</a>
+            or <a href="/auth/register" style="color:var(--red);font-weight:700;">Create an account</a> to continue.
+        </p>
+    </div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# STATE: landing — description + Start Test button           #}
+{# ═══════════════════════════════════════════════════════════ #}
+{% elif state == "landing" %}
+    <div class="r1-hero">
+        <div class="r1-icon">&#128221;</div>
+        <h1 class="r1-title">Round 1 — MCQ Quiz</h1>
+        <p class="r1-subtitle">
+            Test your knowledge of Python, Machine Learning, Data Structures,
+            Computer Science fundamentals, and more.
+        </p>
+    </div>
+
+    <div class="r1-info-grid">
+        <div class="r1-info-card">
+            <div class="ic-val">{{ total_questions }}</div>
+            <div class="ic-label">Questions</div>
+        </div>
+        <div class="r1-info-card">
+            <div class="ic-val">{{ duration_minutes }} min</div>
+            <div class="ic-label">Time Limit</div>
+        </div>
+        <div class="r1-info-card">
+            <div class="ic-val">1</div>
+            <div class="ic-label">Mark / Question</div>
+        </div>
+        <div class="r1-info-card">
+            <div class="ic-val">0</div>
+            <div class="ic-label">Negative Marking</div>
+        </div>
+    </div>
+
+    <div class="r1-rules">
+        <h3>&#9888;&#65039; Rules</h3>
+        <ul>
+            <li>Once you click <strong>Start Test</strong>, the {{ duration_minutes }}-minute timer begins immediately.</li>
+            <li>You can navigate between questions freely using Previous / Next buttons or the question map.</li>
+            <li><strong>All {{ total_questions }} questions must be answered</strong> before you can submit.</li>
+            <li>Switching tabs is monitored. After <strong>{{ max_tab_switches }} tab switches</strong> your quiz will be <strong>auto-submitted</strong>.</li>
+            <li>When the timer runs out, the quiz is auto-submitted with whatever answers you have.</li>
+            <li>Scores will <strong>not</strong> be shown after submission — results will be announced by the organisers.</li>
+        </ul>
+    </div>
+
+    <div style="text-align:center; margin-bottom: 2rem;">
+        <form action="{{ url_for('round1.start') }}" method="post">
+            <button type="submit" class="btn btn-primary" style="font-size:1.1rem; padding:0.85rem 3rem;">
+                &#9654; Start Test
+            </button>
+        </form>
+    </div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# STATE: submitted — confirmation                            #}
+{# ═══════════════════════════════════════════════════════════ #}
+{% elif state == "submitted" %}
+    <div class="r1-hero">
+        <div class="r1-icon">&#9989;</div>
+        <h1 class="r1-title">Quiz Submitted</h1>
+        <p class="r1-subtitle">
+            Your responses have been recorded. Results will be announced by the organisers.
+        </p>
+    </div>
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# STATE: quiz — active quiz                                   #}
+{# ═══════════════════════════════════════════════════════════ #}
+{% elif state == "quiz" %}
+
+    <div class="quiz-topbar">
+        <div class="timer-chip" id="timer">&#9201; --:--</div>
+        <div class="switch-chip" id="switchChip">
+            &#128065; Tab switches: <span id="switchCount">{{ tab_switches }}</span> / {{ max_tab_switches }}
+        </div>
+    </div>
+
+    <div class="q-card" id="qCard">
+        <div class="q-header">
+            <span class="q-number" id="qLabel">Question 1 / {{ total_questions }}</span>
+        </div>
+        <div class="q-text" id="qText"></div>
+        <div class="q-options" id="qOptions"></div>
+    </div>
+
+    <div class="q-nav">
+        <button class="btn btn-secondary" id="prevBtn" onclick="navigate(-1)">&larr; Previous</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="navigate(1)">Next &rarr;</button>
+    </div>
+
+    <div class="q-map" id="qMap"></div>
+
+    <div class="submit-area">
+        <div class="answered-count" id="answeredCount">0 / {{ total_questions }} answered</div>
+        <form action="{{ url_for('round1.submit') }}" method="post" id="submitForm">
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit Quiz</button>
+        </form>
+    </div>
+
+    <div class="ts-overlay" id="tsOverlay">
+        <div class="ts-box">
+            <h2>&#9888;&#65039; Tab Switch Detected</h2>
+            <p id="tsMsg"></p>
+            <button class="btn btn-primary" onclick="dismissOverlay()">I Understand</button>
+        </div>
+    </div>
+
+{% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if state == "quiz" %}
+<script>
+(function(){
+    "use strict";
+
+    var questions   = {{ quiz_questions | tojson }};
+    var answers     = {{ answers | tojson }};
+    var totalQ      = {{ total_questions }};
+    var timeLeft    = {{ time_remaining }};
+    var tabSwitches = {{ tab_switches }};
+    var maxSwitches = {{ max_tab_switches }};
+    var currentIdx  = 0;
+    var autoSubmitted = false;
+
+    var qLabel       = document.getElementById('qLabel');
+    var qText        = document.getElementById('qText');
+    var qOptions     = document.getElementById('qOptions');
+    var prevBtn      = document.getElementById('prevBtn');
+    var nextBtn      = document.getElementById('nextBtn');
+    var qMap         = document.getElementById('qMap');
+    var answeredEl   = document.getElementById('answeredCount');
+    var submitBtn    = document.getElementById('submitBtn');
+    var submitForm   = document.getElementById('submitForm');
+    var timerEl      = document.getElementById('timer');
+    var switchCountEl = document.getElementById('switchCount');
+    var switchChip   = document.getElementById('switchChip');
+    var tsOverlay    = document.getElementById('tsOverlay');
+    var tsMsg        = document.getElementById('tsMsg');
+    var letters      = ['A','B','C','D'];
+
+    function renderQ(){
+        if(!questions || !questions.length) return;
+        var q = questions[currentIdx];
+        qLabel.textContent = 'Question ' + (currentIdx+1) + ' / ' + totalQ;
+        qText.textContent  = q.question;
+        qOptions.innerHTML = '';
+        for(var i = 0; i < q.options.length; i++){
+            (function(optIdx){
+                var div = document.createElement('div');
+                div.className = 'q-option';
+                if(answers[String(currentIdx)] === optIdx) div.className += ' selected';
+                var letterSpan = document.createElement('span');
+                letterSpan.className = 'q-option-letter';
+                letterSpan.textContent = letters[optIdx];
+                var textSpan = document.createElement('span');
+                textSpan.textContent = q.options[optIdx];
+                div.appendChild(letterSpan);
+                div.appendChild(textSpan);
+                div.addEventListener('click', function(){ selectOption(currentIdx, optIdx); });
+                qOptions.appendChild(div);
+            })(i);
+        }
+        prevBtn.disabled = (currentIdx === 0);
+        nextBtn.disabled = (currentIdx === totalQ - 1);
+        renderMap();
+        updateAnswered();
+    }
+
+    function renderMap(){
+        qMap.innerHTML = '';
+        for(var i = 0; i < totalQ; i++){
+            (function(idx){
+                var d = document.createElement('div');
+                d.className = 'q-map-dot';
+                if(answers[String(idx)] !== undefined) d.className += ' answered';
+                if(idx === currentIdx) d.className += ' current';
+                d.textContent = idx + 1;
+                d.addEventListener('click', function(){ currentIdx = idx; renderQ(); });
+                qMap.appendChild(d);
+            })(i);
+        }
+    }
+
+    function selectOption(pos, selected){
+        answers[String(pos)] = selected;
+        renderQ();
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/round1/save', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function(){
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if(data.auto_submitted) autoSubmit();
+            } catch(e){}
+        };
+        xhr.send(JSON.stringify({pos: pos, selected: selected}));
+    }
+
+    window.navigate = function(dir){
+        var next = currentIdx + dir;
+        if(next >= 0 && next < totalQ){ currentIdx = next; renderQ(); }
+    };
+
+    function updateAnswered(){
+        var n = Object.keys(answers).length;
+        answeredEl.textContent = n + ' / ' + totalQ + ' answered';
+        submitBtn.disabled = (n < totalQ);
+    }
+
+    function fmtTime(s){
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+    function tickTimer(){
+        if(timeLeft <= 0){ autoSubmit(); return; }
+        timerEl.textContent = '\u23F1 ' + fmtTime(timeLeft);
+        if(timeLeft <= 120) timerEl.classList.add('warn');
+        timeLeft--;
+    }
+    tickTimer();
+    setInterval(tickTimer, 1000);
+
+    document.addEventListener('visibilitychange', function(){
+        if(document.hidden && !autoSubmitted){
+            tabSwitches++;
+            switchCountEl.textContent = tabSwitches;
+            if(tabSwitches >= maxSwitches - 1) switchChip.classList.add('warn');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/round1/tab-switch', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function(){
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if(data.auto_submitted){ autoSubmit(); return; }
+                    tabSwitches = data.tab_switches;
+                    switchCountEl.textContent = tabSwitches;
+                    tsMsg.textContent = 'You have switched tabs ' + tabSwitches + ' time(s). After ' + maxSwitches + ' switches your quiz will be auto-submitted.';
+                    tsOverlay.classList.add('active');
+                } catch(e){}
+            };
+            xhr.send('{}');
+        }
+    });
+
+    window.dismissOverlay = function(){ tsOverlay.classList.remove('active'); };
+
+    function autoSubmit(){
+        if(autoSubmitted) return;
+        autoSubmitted = true;
+        submitForm.submit();
+    }
+
+    renderQ();
+})();
+</script>
+{% endif %}
 {% endblock %}
