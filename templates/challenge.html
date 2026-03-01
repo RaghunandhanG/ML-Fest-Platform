@@ -393,13 +393,6 @@
         {% endif %}
 
         {% if current_user.is_authenticated %}
-        {% set my_flag = user_flags.get(flag.id) %}
-        {% if my_flag %}
-        <div style="margin:0.6rem 0 0.75rem;padding:0.5rem 0.75rem;background:var(--bg-input);border:1.5px solid var(--border-dark);border-radius:var(--radius);font-family:monospace;font-size:0.82rem;letter-spacing:0.02em;word-break:break-all;color:var(--text);user-select:all;" title="Your personal flag — copy this and submit below">
-            <span style="font-size:0.7rem;font-family:sans-serif;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:0.2rem;">Your Flag</span>
-            {{ my_flag }}
-        </div>
-        {% endif %}
         <div class="flag-input-row">
             <input type="text"
                    placeholder="flag{...}"

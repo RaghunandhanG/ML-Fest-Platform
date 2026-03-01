@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
 from deps import render
-from models import User, Challenge, Flag, UserFlag, get_site_config
+from models import User, Challenge, Flag, get_site_config
 from challenge_catalog import get_resources_by_order
 
 router = APIRouter(tags=["challenges"])
@@ -50,14 +50,11 @@ def view_challenge(request: Request, challenge_id: int):
         return RedirectResponse(url="/challenges", status_code=303)
 
     progress = {}
-    user_flags = {}  # flag_id -> flag_value for this user
     if user.is_authenticated:
         progress = ch.get_user_progress(db, user.id)
-        ufs = db.query(UserFlag).filter_by(user_id=user.id, challenge_id=ch.id).all()
-        user_flags = {uf.flag_id: uf.flag_value for uf in ufs}
 
     resources = get_resources_by_order().get(ch.order_position, [])
-    return render("challenge.html", request, challenge=ch, progress=progress, resources=resources, event_active=_get_event_active(db), user_flags=user_flags)
+    return render("challenge.html", request, challenge=ch, progress=progress, resources=resources, event_active=_get_event_active(db))
 
 
 @router.get("/dashboard", name="challenges.dashboard")
