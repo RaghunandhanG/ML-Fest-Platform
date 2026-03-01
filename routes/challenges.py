@@ -75,7 +75,9 @@ def dashboard(request: Request):
     max_possible = sum(ch.total_points for ch in challenges)
     completed_count = sum(1 for p in progress_data.values() if p["completed_flags"] > 0)
     overall_pct = round(computed_total / max_possible * 100) if max_possible > 0 else 0
-    return render("dashboard.html", request, computed_total=computed_total, max_possible=max_possible, completed_count=completed_count, overall_pct=overall_pct)
+    evaluator = db.query(User).get(user.assigned_evaluator_id) if user.assigned_evaluator_id else None
+    evaluator_name = evaluator.username if evaluator else None
+    return render("dashboard.html", request, computed_total=computed_total, max_possible=max_possible, completed_count=completed_count, overall_pct=overall_pct, evaluator_name=evaluator_name)
 
 
 @router.get("/leaderboard", name="challenges.leaderboard")

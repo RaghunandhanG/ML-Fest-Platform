@@ -73,4 +73,14 @@
         </div>
     </div>
 </div>
+
+{% if evaluator_name %}
+<div style="margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-card);border:var(--border-w) solid var(--border-dark);border-radius:var(--radius);font-size:0.9rem;font-weight:600;color:var(--text-muted);">
+    Your Evaluator: <strong style="color:var(--text);">{{ evaluator_name }}</strong>
+</div>
+{% else %}
+<div style="margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-card);border:var(--border-w) solid var(--border-dark);border-radius:var(--radius);font-size:0.9rem;font-weight:600;color:var(--text-muted);">
+    Your Evaluator: <span style="font-style:italic;">Not yet assigned</span>
+</div>
+{% endif %}
 {% endblock %}
